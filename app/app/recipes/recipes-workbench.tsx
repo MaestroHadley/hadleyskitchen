@@ -13,6 +13,7 @@ type Recipe = {
   yield_unit: string | null;
   description: string | null;
   instructions: string | null;
+  archived_at: string | null;
 };
 
 type Ingredient = {
@@ -89,7 +90,7 @@ export default function RecipesWorkbench() {
       await Promise.all([
         supabase
           .from("recipes")
-          .select("id,title,category,yield_qty,yield_unit,description,instructions")
+          .select("id,title,category,yield_qty,yield_unit,description,instructions,archived_at")
           .order("title", { ascending: true }),
         supabase
           .from("ingredients")
@@ -110,8 +111,9 @@ export default function RecipesWorkbench() {
     setRecipes(parsedRecipes);
     setIngredients(parsedIngredients);
 
-    if (!selectedRecipeId && parsedRecipes.length > 0) {
-      setSelectedRecipeId(parsedRecipes[0].id);
+    const firstActive = parsedRecipes.find((r) => !r.archived_at);
+    if (!selectedRecipeId && firstActive) {
+      setSelectedRecipeId(firstActive.id);
     }
   }
 
@@ -151,9 +153,10 @@ export default function RecipesWorkbench() {
           yield_unit: newYieldUnit.trim() || "batch",
           description: newDescription.trim() || null,
           instructions: newInstructions.trim() || null,
+          archived_at: null,
         },
       ])
-      .select("id,title,category,yield_qty,yield_unit,description,instructions")
+      .select("id,title,category,yield_qty,yield_unit,description,instructions,archived_at")
       .single();
 
     if (insertError) {
@@ -171,6 +174,36 @@ export default function RecipesWorkbench() {
     setNewDescription("");
     setNewInstructions("");
     setSuccess("Recipe created.");
+  }
+
+  async function setRecipeArchived(recipeId: string, archived: boolean) {
+    setError(null);
+    setSuccess(null);
+
+    const { error: updateError } = await supabase
+      .from("recipes")
+      .update({ archived_at: archived ? new Date().toISOString() : null })
+      .eq("id", recipeId);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    await loadRecipesAndIngredients();
+
+    if (archived && selectedRecipeId === recipeId) {
+      const { data: nextActive } = await supabase
+        .from("recipes")
+        .select("id")
+        .is("archived_at", null)
+        .order("title", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      setSelectedRecipeId(nextActive?.id ?? null);
+    }
+
+    setSuccess(archived ? "Recipe archived." : "Recipe restored.");
   }
 
   async function addInlineIngredient(e: React.FormEvent) {
@@ -256,6 +289,9 @@ export default function RecipesWorkbench() {
     setSuccess("Line removed.");
   }
 
+  const activeRecipes = recipes.filter((r) => !r.archived_at);
+  const archivedRecipes = recipes.filter((r) => !!r.archived_at);
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
       <aside style={{ display: "grid", gap: 18 }}>
@@ -270,11 +306,11 @@ export default function RecipesWorkbench() {
         >
           <h2 style={{ margin: "0 0 10px" }}>Your Recipes</h2>
           {loading && <p style={{ margin: 0, color: "#4b5563" }}>Loading...</p>}
-          {!loading && recipes.length === 0 && (
+          {!loading && activeRecipes.length === 0 && (
             <p style={{ margin: 0, color: "#4b5563" }}>No recipes yet. Create your first one below.</p>
           )}
           <div style={{ display: "grid", gap: 8 }}>
-            {recipes.map((recipe) => {
+            {activeRecipes.map((recipe) => {
               const active = selectedRecipeId === recipe.id;
               return (
                 <button
@@ -306,6 +342,42 @@ export default function RecipesWorkbench() {
               );
             })}
           </div>
+          {archivedRecipes.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <h3 style={{ margin: "10px 0 8px", fontSize: 14, color: "#6b7280" }}>Archived</h3>
+              <div style={{ display: "grid", gap: 8 }}>
+                {archivedRecipes.map((recipe) => (
+                  <div
+                    key={recipe.id}
+                    style={{
+                      border: "1px solid #d1d5db",
+                      borderRadius: 10,
+                      padding: "8px 10px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ color: "#6b7280" }}>{recipe.title}</span>
+                    <button
+                      type="button"
+                      onClick={() => void setRecipeArchived(recipe.id, false)}
+                      style={{
+                        border: "1px solid #d1d5db",
+                        background: "#fff",
+                        borderRadius: 8,
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Restore
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         <section
@@ -450,6 +522,21 @@ export default function RecipesWorkbench() {
             <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
               Yield: {selectedRecipe.yield_qty ?? 1} {selectedRecipe.yield_unit ?? "batch"}
             </p>
+            <div style={{ marginBottom: 10 }}>
+              <button
+                type="button"
+                onClick={() => void setRecipeArchived(selectedRecipe.id, true)}
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Archive recipe
+              </button>
+            </div>
             <p style={{ marginTop: 0, color: "#4b5563" }}>
               {selectedRecipe.description?.trim() || "No description yet."}
             </p>
