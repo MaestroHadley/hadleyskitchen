@@ -9,6 +9,8 @@ type Recipe = {
   id: string;
   title: string;
   category: string | null;
+  yield_qty: number | null;
+  yield_unit: string | null;
   description: string | null;
   instructions: string | null;
 };
@@ -41,6 +43,8 @@ export default function RecipesWorkbench() {
 
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<RecipeCategory>("bread");
+  const [newYieldQty, setNewYieldQty] = useState<number>(1);
+  const [newYieldUnit, setNewYieldUnit] = useState("batch");
   const [newDescription, setNewDescription] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
 
@@ -54,6 +58,7 @@ export default function RecipesWorkbench() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [scaleOutputQty, setScaleOutputQty] = useState<number>(1);
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -84,7 +89,7 @@ export default function RecipesWorkbench() {
       await Promise.all([
         supabase
           .from("recipes")
-          .select("id,title,category,description,instructions")
+          .select("id,title,category,yield_qty,yield_unit,description,instructions")
           .order("title", { ascending: true }),
         supabase
           .from("ingredients")
@@ -142,11 +147,13 @@ export default function RecipesWorkbench() {
         {
           title,
           category: newCategory,
+          yield_qty: newYieldQty,
+          yield_unit: newYieldUnit.trim() || "batch",
           description: newDescription.trim() || null,
           instructions: newInstructions.trim() || null,
         },
       ])
-      .select("id,title,category,description,instructions")
+      .select("id,title,category,yield_qty,yield_unit,description,instructions")
       .single();
 
     if (insertError) {
@@ -159,6 +166,8 @@ export default function RecipesWorkbench() {
     setSelectedRecipeId(created.id);
     setNewTitle("");
     setNewCategory("bread");
+    setNewYieldQty(1);
+    setNewYieldUnit("batch");
     setNewDescription("");
     setNewInstructions("");
     setSuccess("Recipe created.");
@@ -288,6 +297,11 @@ export default function RecipesWorkbench() {
                       [{recipe.category}]
                     </span>
                   )}
+                  {!!recipe.yield_qty && (
+                    <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 12 }}>
+                      {recipe.yield_qty} {recipe.yield_unit ?? "batch"}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -323,6 +337,24 @@ export default function RecipesWorkbench() {
                 </option>
               ))}
             </select>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 10 }}>
+              <input
+                type="number"
+                min={0.01}
+                step="0.01"
+                value={newYieldQty}
+                onChange={(e) => setNewYieldQty(Number(e.target.value))}
+                required
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <input
+                value={newYieldUnit}
+                onChange={(e) => setNewYieldUnit(e.target.value)}
+                placeholder="yield unit"
+                required
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+            </div>
             <textarea
               placeholder="Description (optional)"
               value={newDescription}
@@ -415,6 +447,9 @@ export default function RecipesWorkbench() {
             <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
               Category: {selectedRecipe.category ?? "uncategorized"}
             </p>
+            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
+              Yield: {selectedRecipe.yield_qty ?? 1} {selectedRecipe.yield_unit ?? "batch"}
+            </p>
             <p style={{ marginTop: 0, color: "#4b5563" }}>
               {selectedRecipe.description?.trim() || "No description yet."}
             </p>
@@ -484,7 +519,7 @@ export default function RecipesWorkbench() {
             {recipeLines.length === 0 ? (
               <p style={{ margin: 0, color: "#4b5563" }}>No ingredient lines yet.</p>
             ) : (
-              <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
                 {recipeLines.map((line) => (
                   <div
                     key={line.id}
@@ -520,6 +555,46 @@ export default function RecipesWorkbench() {
                   </div>
                 ))}
               </div>
+            )}
+
+            {recipeLines.length > 0 && (
+              <>
+                <h3 style={{ marginBottom: 10 }}>Scale Preview</h3>
+                <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 10, marginBottom: 10 }}>
+                  <input
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    value={scaleOutputQty}
+                    onChange={(e) => setScaleOutputQty(Number(e.target.value))}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                  <div style={{ alignSelf: "center", color: "#4b5563" }}>
+                    target {selectedRecipe.yield_unit ?? "batch"}
+                  </div>
+                </div>
+                <div style={{ color: "#374151", marginBottom: 10 }}>
+                  Scale factor:{" "}
+                  {selectedRecipe.yield_qty && selectedRecipe.yield_qty > 0
+                    ? (scaleOutputQty / selectedRecipe.yield_qty).toFixed(3)
+                    : "1.000"}
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {recipeLines.map((line) => {
+                    const factor =
+                      selectedRecipe.yield_qty && selectedRecipe.yield_qty > 0
+                        ? scaleOutputQty / selectedRecipe.yield_qty
+                        : 1;
+                    const scaledQty = Number(line.qty) * factor;
+                    return (
+                      <div key={`scaled-${line.id}`} style={{ color: "#374151" }}>
+                        {(Math.round(scaledQty * 1000) / 1000).toString()}{" "}
+                        {line.unit ?? line.ingredients?.unit_type ?? "unit"} {line.ingredients?.name ?? "Unknown"}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </>
         )}

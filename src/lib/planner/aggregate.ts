@@ -15,6 +15,11 @@ export type AggregatedIngredientTotal = {
   missing_line_count: number;
 };
 
+export type RecipeScalingInput = {
+  recipe_yield_qty: number;
+  target_output_qty: number;
+};
+
 /**
  * Aggregates ingredient lines into canonical ingredient units.
  * Missing conversion mappings are tracked per ingredient in missing_line_count.
@@ -32,4 +37,22 @@ export async function aggregateIngredientLines(
   }
 
   return (data ?? []) as AggregatedIngredientTotal[];
+}
+
+export function getScaleFactor({ recipe_yield_qty, target_output_qty }: RecipeScalingInput): number {
+  if (!(recipe_yield_qty > 0) || !(target_output_qty > 0)) {
+    return 1;
+  }
+  return target_output_qty / recipe_yield_qty;
+}
+
+export function scaleIngredientLines(
+  lines: IngredientLineInput[],
+  scaling: RecipeScalingInput
+): IngredientLineInput[] {
+  const factor = getScaleFactor(scaling);
+  return lines.map((line) => ({
+    ...line,
+    qty: line.qty * factor,
+  }));
 }
