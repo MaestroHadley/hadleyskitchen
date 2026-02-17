@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
+import { useMobile } from "@/lib/use-mobile";
 
 type WeeklyPlan = {
   id: string;
@@ -57,6 +58,7 @@ function escapeCsv(value: string | number): string {
 
 export default function WeeklyPlanWorkbench() {
   const supabase = useMemo(() => supabaseBrowser(), []);
+  const isMobile = useMobile(980);
 
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -434,8 +436,14 @@ export default function WeeklyPlanWorkbench() {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
-      <aside style={{ display: "grid", gap: 18 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 360px) minmax(0, 1fr)",
+        gap: 18,
+      }}
+    >
+      <aside style={{ display: "grid", gap: 18, order: isMobile ? 1 : 0 }}>
         <section
           style={{
             background: "#ffffff",
@@ -531,7 +539,7 @@ export default function WeeklyPlanWorkbench() {
               required
               style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
             />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
               <input
                 type="date"
                 value={newWeekStart}
@@ -573,6 +581,7 @@ export default function WeeklyPlanWorkbench() {
           borderRadius: 14,
           boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
           padding: 20,
+          order: isMobile ? 0 : 1,
         }}
       >
         <h2 style={{ marginTop: 0 }}>{selectedPlan?.title ?? "Select a weekly plan"}</h2>
@@ -622,7 +631,12 @@ export default function WeeklyPlanWorkbench() {
                 value={itemQty}
                 onChange={(e) => setItemQty(Number(e.target.value))}
                 required
-                style={{ width: "220px", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                style={{
+                  width: isMobile ? "100%" : "220px",
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #d1d5db",
+                }}
               />
 
               <button
