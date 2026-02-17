@@ -46,6 +46,23 @@ type RecipeLine = {
   } | null;
 };
 
+type RecipeVersion = {
+  id: string;
+  version_number: number;
+  created_at: string;
+  note: string | null;
+  title: string;
+  yield_qty: number;
+  yield_unit: string;
+  ingredient_lines: Array<{
+    ingredient_id: string;
+    ingredient_name: string;
+    qty: number;
+    unit: string | null;
+    canonical_unit: string | null;
+  }>;
+};
+
 export default function RecipesWorkbench() {
   const supabase = useMemo(() => supabaseBrowser(), []);
 
@@ -82,6 +99,8 @@ export default function RecipesWorkbench() {
   const [recipeDietaryTags, setRecipeDietaryTags] = useState<DietaryTag[]>([]);
   const [allergenFilters, setAllergenFilters] = useState<AllergenTag[]>([]);
   const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
+  const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
+  const [versionNote, setVersionNote] = useState("");
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -93,8 +112,10 @@ export default function RecipesWorkbench() {
   useEffect(() => {
     if (selectedRecipeId) {
       void loadRecipeLines(selectedRecipeId);
+      void loadRecipeVersions(selectedRecipeId);
     } else {
       setRecipeLines([]);
+      setRecipeVersions([]);
     }
   }, [selectedRecipeId]);
 
@@ -162,6 +183,72 @@ export default function RecipesWorkbench() {
     setRecipeLines((data ?? []) as unknown as RecipeLine[]);
   }
 
+  async function loadRecipeVersions(recipeId: string) {
+    const { data, error: versionError } = await supabase
+      .from("recipe_versions")
+      .select("id,version_number,created_at,note,title,yield_qty,yield_unit,ingredient_lines")
+      .eq("recipe_id", recipeId)
+      .order("version_number", { ascending: false });
+
+    if (versionError) {
+      setError(versionError.message);
+      return;
+    }
+
+    setRecipeVersions((data ?? []) as unknown as RecipeVersion[]);
+  }
+
+  async function createVersionSnapshot(recipeId: string, note: string) {
+    const { error: snapshotError } = await supabase.rpc("create_recipe_version", {
+      p_recipe_id: recipeId,
+      p_note: note || null,
+    });
+
+    if (snapshotError) {
+      // If migrations are not applied yet, keep core UI actions working.
+      console.warn("create_recipe_version failed:", snapshotError.message);
+      return false;
+    }
+
+    await loadRecipeVersions(recipeId);
+    return true;
+  }
+
+  async function restoreVersion(versionId: string) {
+    if (!selectedRecipeId) return;
+    setError(null);
+    setSuccess(null);
+
+    const { error: restoreError } = await supabase.rpc("restore_recipe_version", {
+      p_version_id: versionId,
+    });
+
+    if (restoreError) {
+      setError(restoreError.message);
+      return;
+    }
+
+    await loadRecipesAndIngredients();
+    await loadRecipeLines(selectedRecipeId);
+    await loadRecipeVersions(selectedRecipeId);
+    setSuccess("Recipe restored from selected version.");
+  }
+
+  async function saveVersionManually() {
+    if (!selectedRecipeId) return;
+    setError(null);
+    setSuccess(null);
+
+    const ok = await createVersionSnapshot(selectedRecipeId, versionNote.trim() || "Manual snapshot");
+    if (!ok) {
+      setError("Could not save version snapshot. Make sure Phase 6 SQL migration has been run.");
+      return;
+    }
+
+    setVersionNote("");
+    setSuccess("Version snapshot saved.");
+  }
+
   async function createRecipe(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -217,6 +304,7 @@ export default function RecipesWorkbench() {
     setNewDietaryTags([]);
     setNewDescription("");
     setNewInstructions("");
+    await createVersionSnapshot(created.id, "Initial version");
     setSuccess("Recipe created.");
   }
 
@@ -273,6 +361,7 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipesAndIngredients();
+    await createVersionSnapshot(selectedRecipeId, "Updated recipe tags");
     setSuccess("Recipe tags updated.");
   }
 
@@ -341,6 +430,7 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipeLines(selectedRecipeId);
+    await createVersionSnapshot(selectedRecipeId, "Added ingredient line");
     setLineQty(1);
     setSuccess("Ingredient line added.");
   }
@@ -356,6 +446,9 @@ export default function RecipesWorkbench() {
     }
 
     setRecipeLines((prev) => prev.filter((line) => line.id !== lineId));
+    if (selectedRecipeId) {
+      await createVersionSnapshot(selectedRecipeId, "Removed ingredient line");
+    }
     setSuccess("Line removed.");
   }
 
@@ -825,6 +918,82 @@ export default function RecipesWorkbench() {
               >
                 Archive recipe
               </button>
+            </div>
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 10,
+                padding: "10px 12px",
+                marginBottom: 12,
+                background: "#fffdfa",
+              }}
+            >
+              <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Version History</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 10 }}>
+                <input
+                  type="text"
+                  value={versionNote}
+                  onChange={(e) => setVersionNote(e.target.value)}
+                  placeholder="Snapshot note (optional)"
+                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #d1d5db" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => void saveVersionManually()}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Save snapshot
+                </button>
+              </div>
+              {recipeVersions.length === 0 ? (
+                <p style={{ margin: 0, color: "#6b7280" }}>No versions yet.</p>
+              ) : (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {recipeVersions.map((version) => (
+                    <div
+                      key={version.id}
+                      style={{
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        padding: "8px 10px",
+                        display: "grid",
+                        gap: 4,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                        <strong>
+                          v{version.version_number} - {version.title}
+                        </strong>
+                        <button
+                          type="button"
+                          onClick={() => void restoreVersion(version.id)}
+                          style={{
+                            padding: "6px 8px",
+                            borderRadius: 8,
+                            border: "1px solid #d1d5db",
+                            background: "#fff",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Restore
+                        </button>
+                      </div>
+                      <div style={{ color: "#6b7280", fontSize: 12 }}>
+                        {new Date(version.created_at).toLocaleString()} - {version.note || "No note"}
+                      </div>
+                      <div style={{ color: "#6b7280", fontSize: 12 }}>
+                        Yield: {version.yield_qty} {version.yield_unit} - Lines: {version.ingredient_lines?.length ?? 0}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <p style={{ marginTop: 0, color: "#4b5563" }}>
               {selectedRecipe.description?.trim() || "No description yet."}
