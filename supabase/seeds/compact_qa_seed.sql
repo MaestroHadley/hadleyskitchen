@@ -45,47 +45,110 @@ where not exists (
 );
 
 -- 3) Seed a QA recipe.
-with params as (
-  select id as owner_id
+do $$
+declare
+  v_owner uuid;
+  v_has_name_col boolean;
+begin
+  select id into v_owner
   from auth.users
   where lower(email) = lower('hadleyskitchen@protonmail.com')
-  limit 1
-)
-insert into public.recipes (
-  title,
-  category,
-  yield_qty,
-  yield_unit,
-  description,
-  instructions,
-  fermentation_minutes,
-  proof_minutes,
-  bake_temp_f,
-  bake_minutes,
-  allergen_tags,
-  dietary_tags,
-  owner_id
-)
-select
-  'QA Country Loaf',
-  'bread',
-  2,
-  'loaf',
-  'Compact QA seed recipe.',
-  'Mix, bulk ferment, shape, proof, bake.',
-  180,
-  60,
-  465,
-  40,
-  array['gluten']::text[],
-  array['vegetarian']::text[],
-  p.owner_id
-from params p
-where not exists (
-  select 1 from public.recipes r
-  where r.owner_id = p.owner_id
-    and r.title = 'QA Country Loaf'
-);
+  limit 1;
+
+  if v_owner is null then
+    raise exception 'No auth.users row found for email: hadleyskitchen@protonmail.com';
+  end if;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'recipes'
+      and column_name = 'name'
+  ) into v_has_name_col;
+
+  if v_has_name_col then
+    execute $sql$
+      insert into public.recipes (
+        name,
+        title,
+        category,
+        yield_qty,
+        yield_unit,
+        description,
+        instructions,
+        fermentation_minutes,
+        proof_minutes,
+        bake_temp_f,
+        bake_minutes,
+        allergen_tags,
+        dietary_tags,
+        owner_id
+      )
+      select
+        'QA Country Loaf',
+        'QA Country Loaf',
+        'bread',
+        2,
+        'loaf',
+        'Compact QA seed recipe.',
+        'Mix, bulk ferment, shape, proof, bake.',
+        180,
+        60,
+        465,
+        40,
+        array['gluten']::text[],
+        array['vegetarian']::text[],
+        $1
+      where not exists (
+        select 1
+        from public.recipes r
+        where r.owner_id = $1
+          and (r.title = 'QA Country Loaf' or r.name = 'QA Country Loaf')
+      )
+    $sql$
+    using v_owner;
+  else
+    execute $sql$
+      insert into public.recipes (
+        title,
+        category,
+        yield_qty,
+        yield_unit,
+        description,
+        instructions,
+        fermentation_minutes,
+        proof_minutes,
+        bake_temp_f,
+        bake_minutes,
+        allergen_tags,
+        dietary_tags,
+        owner_id
+      )
+      select
+        'QA Country Loaf',
+        'bread',
+        2,
+        'loaf',
+        'Compact QA seed recipe.',
+        'Mix, bulk ferment, shape, proof, bake.',
+        180,
+        60,
+        465,
+        40,
+        array['gluten']::text[],
+        array['vegetarian']::text[],
+        $1
+      where not exists (
+        select 1
+        from public.recipes r
+        where r.owner_id = $1
+          and r.title = 'QA Country Loaf'
+      )
+    $sql$
+    using v_owner;
+  end if;
+end $$;
 
 -- 4) Seed recipe lines for that recipe.
 with params as (
