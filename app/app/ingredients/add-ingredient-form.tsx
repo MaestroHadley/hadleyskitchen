@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
-
-const UNIT_OPTIONS = ["g", "kg", "oz", "lb", "ml", "l", "tsp", "tbsp", "cup", "unit"] as const;
+import { UNIT_OPTIONS, type UnitOption } from "@/lib/units";
 
 export default function AddIngredientForm() {
   const supabase = supabaseBrowser();
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [unitType, setUnitType] = useState<(typeof UNIT_OPTIONS)[number]>("g");
+  const [unitType, setUnitType] = useState<UnitOption>("g");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -78,7 +77,7 @@ export default function AddIngredientForm() {
           Canonical unit
           <select
             value={unitType}
-            onChange={(e) => setUnitType(e.target.value as (typeof UNIT_OPTIONS)[number])}
+            onChange={(e) => setUnitType(e.target.value as UnitOption)}
             style={{
               width: "100%",
               padding: "11px 12px",
