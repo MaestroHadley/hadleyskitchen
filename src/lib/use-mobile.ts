@@ -6,11 +6,30 @@ export function useMobile(breakpointPx = 900) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia(`(max-width: ${breakpointPx}px)`);
-    const apply = () => setIsMobile(media.matches);
+    const HYSTERESIS = 24;
+
+    const getWidth = () => {
+      // visualViewport is less sensitive to scrollbar appearance/disappearance.
+      return window.visualViewport?.width ?? window.innerWidth;
+    };
+
+    const apply = () => {
+      const width = getWidth();
+      setIsMobile((prev) => {
+        if (prev) {
+          return width <= breakpointPx + HYSTERESIS;
+        }
+        return width <= breakpointPx - HYSTERESIS;
+      });
+    };
+
     apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    window.addEventListener("resize", apply);
+    window.visualViewport?.addEventListener("resize", apply);
+    return () => {
+      window.removeEventListener("resize", apply);
+      window.visualViewport?.removeEventListener("resize", apply);
+    };
   }, [breakpointPx]);
 
   return isMobile;

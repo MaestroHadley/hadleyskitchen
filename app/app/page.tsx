@@ -27,12 +27,6 @@ type AggregateRow = {
 export default async function AppHome() {
   const supabase = await supabaseServer();
   const { data } = await supabase.auth.getUser();
-  const navItems = [
-    { href: "/app/ingredients", label: "Ingredients" },
-    { href: "/app/recipes", label: "Recipes" },
-    { href: "/app/weekly-plan", label: "Weekly Plan" },
-    { href: "/app/reports", label: "Reports" },
-  ];
 
   const { data: latestPlan } = await supabase
     .from("weekly_plans")
@@ -139,33 +133,6 @@ export default async function AppHome() {
         </div>
         <LogoutButton />
       </header>
-
-      <nav
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          marginBottom: 22,
-        }}
-      >
-        {navItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            style={{
-              textDecoration: "none",
-              color: "#1f2937",
-              padding: "10px 14px",
-              borderRadius: 999,
-              border: "1px solid #d1d5db",
-              background: "#ffffff",
-              fontWeight: 600,
-            }}
-          >
-            {item.label}
-          </a>
-        ))}
-      </nav>
 
       <section
         style={{
