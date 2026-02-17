@@ -1,9 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { UNIT_OPTIONS, type UnitOption } from "@/lib/units";
 import { RECIPE_CATEGORY_OPTIONS, type RecipeCategory } from "@/lib/recipe-categories";
+import {
+  ALLERGEN_TAG_OPTIONS,
+  DIETARY_TAG_OPTIONS,
+  type AllergenTag,
+  type DietaryTag,
+} from "@/lib/recipe-tags";
 
 type Recipe = {
   id: string;
@@ -18,6 +24,8 @@ type Recipe = {
   proof_minutes: number | null;
   bake_temp_f: number | null;
   bake_minutes: number | null;
+  allergen_tags: string[];
+  dietary_tags: string[];
 };
 
 type Ingredient = {
@@ -54,6 +62,8 @@ export default function RecipesWorkbench() {
   const [newProofMinutes, setNewProofMinutes] = useState<string>("");
   const [newBakeTempF, setNewBakeTempF] = useState<string>("");
   const [newBakeMinutes, setNewBakeMinutes] = useState<string>("");
+  const [newAllergenTags, setNewAllergenTags] = useState<AllergenTag[]>([]);
+  const [newDietaryTags, setNewDietaryTags] = useState<DietaryTag[]>([]);
   const [newDescription, setNewDescription] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
 
@@ -68,6 +78,10 @@ export default function RecipesWorkbench() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [scaleOutputQty, setScaleOutputQty] = useState<number>(1);
+  const [recipeAllergenTags, setRecipeAllergenTags] = useState<AllergenTag[]>([]);
+  const [recipeDietaryTags, setRecipeDietaryTags] = useState<DietaryTag[]>([]);
+  const [allergenFilters, setAllergenFilters] = useState<AllergenTag[]>([]);
+  const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -90,6 +104,12 @@ export default function RecipesWorkbench() {
     }
   }, [selectedIngredient?.id, selectedIngredient?.unit_type]);
 
+  useEffect(() => {
+    if (!selectedRecipe) return;
+    setRecipeAllergenTags((selectedRecipe.allergen_tags ?? []) as AllergenTag[]);
+    setRecipeDietaryTags((selectedRecipe.dietary_tags ?? []) as DietaryTag[]);
+  }, [selectedRecipe?.id]);
+
   async function loadRecipesAndIngredients() {
     setLoading(true);
     setError(null);
@@ -99,7 +119,7 @@ export default function RecipesWorkbench() {
         supabase
           .from("recipes")
           .select(
-            "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes"
+            "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes,allergen_tags,dietary_tags"
           )
           .order("title", { ascending: true }),
         supabase
@@ -165,13 +185,15 @@ export default function RecipesWorkbench() {
           proof_minutes: newProofMinutes ? Number(newProofMinutes) : null,
           bake_temp_f: newBakeTempF ? Number(newBakeTempF) : null,
           bake_minutes: newBakeMinutes ? Number(newBakeMinutes) : null,
+          allergen_tags: newAllergenTags,
+          dietary_tags: newDietaryTags,
           description: newDescription.trim() || null,
           instructions: newInstructions.trim() || null,
           archived_at: null,
         },
       ])
       .select(
-        "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes"
+        "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes,allergen_tags,dietary_tags"
       )
       .single();
 
@@ -191,6 +213,8 @@ export default function RecipesWorkbench() {
     setNewProofMinutes("");
     setNewBakeTempF("");
     setNewBakeMinutes("");
+    setNewAllergenTags([]);
+    setNewDietaryTags([]);
     setNewDescription("");
     setNewInstructions("");
     setSuccess("Recipe created.");
@@ -224,6 +248,32 @@ export default function RecipesWorkbench() {
     }
 
     setSuccess(archived ? "Recipe archived." : "Recipe restored.");
+  }
+
+  function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
+    setFn((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
+  }
+
+  async function saveSelectedRecipeTags() {
+    if (!selectedRecipeId) return;
+    setError(null);
+    setSuccess(null);
+
+    const { error: updateError } = await supabase
+      .from("recipes")
+      .update({
+        allergen_tags: recipeAllergenTags,
+        dietary_tags: recipeDietaryTags,
+      })
+      .eq("id", selectedRecipeId);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    await loadRecipesAndIngredients();
+    setSuccess("Recipe tags updated.");
   }
 
   async function addInlineIngredient(e: React.FormEvent) {
@@ -309,8 +359,17 @@ export default function RecipesWorkbench() {
     setSuccess("Line removed.");
   }
 
-  const activeRecipes = recipes.filter((r) => !r.archived_at);
-  const archivedRecipes = recipes.filter((r) => !!r.archived_at);
+  const filteredRecipes = recipes.filter((recipe) => {
+    const allergenOk =
+      allergenFilters.length === 0 ||
+      allergenFilters.some((tag) => (recipe.allergen_tags ?? []).includes(tag));
+    const dietaryOk =
+      dietaryFilters.length === 0 ||
+      dietaryFilters.some((tag) => (recipe.dietary_tags ?? []).includes(tag));
+    return allergenOk && dietaryOk;
+  });
+  const activeRecipes = filteredRecipes.filter((r) => !r.archived_at);
+  const archivedRecipes = filteredRecipes.filter((r) => !!r.archived_at);
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
@@ -325,6 +384,54 @@ export default function RecipesWorkbench() {
           }}
         >
           <h2 style={{ margin: "0 0 10px" }}>Your Recipes</h2>
+          <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
+            <div style={{ color: "#6b7280", fontSize: 13 }}>Filter by allergen tags</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {ALLERGEN_TAG_OPTIONS.map((tag) => {
+                const active = allergenFilters.includes(tag);
+                return (
+                  <button
+                    key={`allergen-filter-${tag}`}
+                    type="button"
+                    onClick={() => toggleTag(setAllergenFilters, tag)}
+                    style={{
+                      border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                      background: active ? "#f3f4f6" : "#fff",
+                      borderRadius: 999,
+                      padding: "6px 8px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                    }}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ color: "#6b7280", fontSize: 13 }}>Filter by dietary tags</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {DIETARY_TAG_OPTIONS.map((tag) => {
+                const active = dietaryFilters.includes(tag);
+                return (
+                  <button
+                    key={`dietary-filter-${tag}`}
+                    type="button"
+                    onClick={() => toggleTag(setDietaryFilters, tag)}
+                    style={{
+                      border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                      background: active ? "#f3f4f6" : "#fff",
+                      borderRadius: 999,
+                      padding: "6px 8px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                    }}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           {loading && <p style={{ margin: 0, color: "#4b5563" }}>Loading...</p>}
           {!loading && activeRecipes.length === 0 && (
             <p style={{ margin: 0, color: "#4b5563" }}>No recipes yet. Create your first one below.</p>
@@ -487,6 +594,56 @@ export default function RecipesWorkbench() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ color: "#6b7280", fontSize: 13 }}>Allergen tags</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {ALLERGEN_TAG_OPTIONS.map((tag) => {
+                  const active = newAllergenTags.includes(tag);
+                  return (
+                    <button
+                      key={`new-allergen-${tag}`}
+                      type="button"
+                      onClick={() => toggleTag(setNewAllergenTags, tag)}
+                      style={{
+                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                        background: active ? "#f3f4f6" : "#fff",
+                        borderRadius: 999,
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ display: "grid", gap: 8 }}>
+              <div style={{ color: "#6b7280", fontSize: 13 }}>Dietary tags</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {DIETARY_TAG_OPTIONS.map((tag) => {
+                  const active = newDietaryTags.includes(tag);
+                  return (
+                    <button
+                      key={`new-dietary-${tag}`}
+                      type="button"
+                      onClick={() => toggleTag(setNewDietaryTags, tag)}
+                      style={{
+                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                        background: active ? "#f3f4f6" : "#fff",
+                        borderRadius: 999,
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <textarea
               placeholder="Description (optional)"
               value={newDescription}
@@ -587,6 +744,73 @@ export default function RecipesWorkbench() {
               {selectedRecipe.proof_minutes ?? "-"} min, bake {selectedRecipe.bake_temp_f ?? "-"} F for{" "}
               {selectedRecipe.bake_minutes ?? "-"} min
             </p>
+            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
+              Allergens: {(selectedRecipe.allergen_tags ?? []).join(", ") || "none"}
+            </p>
+            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
+              Dietary: {(selectedRecipe.dietary_tags ?? []).join(", ") || "none"}
+            </p>
+            <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
+              <div style={{ color: "#374151", fontWeight: 600 }}>Edit tags</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {ALLERGEN_TAG_OPTIONS.map((tag) => {
+                  const active = recipeAllergenTags.includes(tag);
+                  return (
+                    <button
+                      key={`edit-allergen-${tag}`}
+                      type="button"
+                      onClick={() => toggleTag(setRecipeAllergenTags, tag)}
+                      style={{
+                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                        background: active ? "#f3f4f6" : "#fff",
+                        borderRadius: 999,
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {DIETARY_TAG_OPTIONS.map((tag) => {
+                  const active = recipeDietaryTags.includes(tag);
+                  return (
+                    <button
+                      key={`edit-dietary-${tag}`}
+                      type="button"
+                      onClick={() => toggleTag(setRecipeDietaryTags, tag)}
+                      style={{
+                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                        background: active ? "#f3f4f6" : "#fff",
+                        borderRadius: 999,
+                        padding: "6px 8px",
+                        cursor: "pointer",
+                        fontSize: 12,
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => void saveSelectedRecipeTags()}
+                style={{
+                  width: "fit-content",
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Save tags
+              </button>
+            </div>
             <div style={{ marginBottom: 10 }}>
               <button
                 type="button"
