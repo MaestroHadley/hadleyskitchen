@@ -1,31 +1,32 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 
-function LoginForm() {
+export default function SignupPage() {
   const supabase = supabaseBrowser();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/app";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+    setMsg(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password });
 
     setLoading(false);
     if (error) return setErr(error.message);
 
-    router.push(next);
+    setMsg("Account created. If email confirmation is enabled, check your inbox.");
+    router.push("/app");
     router.refresh();
   }
 
@@ -40,9 +41,9 @@ function LoginForm() {
           padding: 24,
         }}
       >
-        <h1 style={{ margin: "0 0 8px", fontSize: 28 }}>Log in</h1>
+        <h1 style={{ margin: "0 0 8px", fontSize: 28 }}>Create account</h1>
         <p style={{ margin: "0 0 20px", color: "#4b5563" }}>
-          Access your baking prep planner.
+          Set up access for your kitchen planning workspace.
         </p>
 
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 14 }}>
@@ -81,11 +82,12 @@ function LoginForm() {
           </label>
 
           {err && <p style={{ margin: 0, color: "#b91c1c" }}>{err}</p>}
+          {msg && <p style={{ margin: 0, color: "#065f46" }}>{msg}</p>}
 
           <input
             type="submit"
             disabled={loading}
-            value={loading ? "Signing in..." : "Sign in"}
+            value={loading ? "Creating..." : "Create account"}
             style={{
               marginTop: 4,
               padding: "11px 12px",
@@ -101,20 +103,12 @@ function LoginForm() {
         </form>
 
         <p style={{ marginTop: 18, color: "#4b5563" }}>
-          No account?{" "}
-          <a href="/signup" style={{ color: "#1f2937", fontWeight: 700 }}>
-            Create one
+          Already have an account?{" "}
+          <a href="/login" style={{ color: "#1f2937", fontWeight: 700 }}>
+            Log in
           </a>
         </p>
       </section>
     </main>
-  );
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
-      <LoginForm />
-    </Suspense>
   );
 }
