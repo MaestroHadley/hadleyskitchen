@@ -10,6 +10,7 @@ import {
   type AllergenTag,
   type DietaryTag,
 } from "@/lib/recipe-tags";
+import { useMobile } from "@/lib/use-mobile";
 
 type Recipe = {
   id: string;
@@ -65,6 +66,7 @@ type RecipeVersion = {
 
 export default function RecipesWorkbench() {
   const supabase = useMemo(() => supabaseBrowser(), []);
+  const isMobile = useMobile(980);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -305,7 +307,6 @@ export default function RecipesWorkbench() {
     setNewDietaryTags([]);
     setNewDescription("");
     setNewInstructions("");
-    await createVersionSnapshot(created.id, "Initial version");
     setSuccess("Recipe created.");
   }
 
@@ -399,7 +400,6 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipesAndIngredients();
-    await createVersionSnapshot(selectedRecipeId, "Updated recipe tags");
     setSuccess("Recipe tags updated.");
   }
 
@@ -468,7 +468,6 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipeLines(selectedRecipeId);
-    await createVersionSnapshot(selectedRecipeId, "Added ingredient line");
     setLineQty(1);
     setSuccess("Ingredient line added.");
   }
@@ -484,9 +483,6 @@ export default function RecipesWorkbench() {
     }
 
     setRecipeLines((prev) => prev.filter((line) => line.id !== lineId));
-    if (selectedRecipeId) {
-      await createVersionSnapshot(selectedRecipeId, "Removed ingredient line");
-    }
     setSuccess("Line removed.");
   }
 
@@ -509,8 +505,14 @@ export default function RecipesWorkbench() {
   }, {});
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
-      <aside style={{ display: "grid", gap: 18 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 360px) minmax(0, 1fr)",
+        gap: 18,
+      }}
+    >
+      <aside style={{ display: "grid", gap: 18, order: isMobile ? 1 : 0 }}>
         <section
           style={{
             background: "#ffffff",
@@ -711,7 +713,7 @@ export default function RecipesWorkbench() {
                 </option>
               ))}
             </select>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 140px", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 140px", gap: 10 }}>
               <input
                 type="number"
                 min={0.01}
@@ -729,7 +731,7 @@ export default function RecipesWorkbench() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
               <input
                 type="number"
                 min={0}
@@ -749,7 +751,7 @@ export default function RecipesWorkbench() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
               <input
                 type="number"
                 min={1}
@@ -906,6 +908,7 @@ export default function RecipesWorkbench() {
           borderRadius: 14,
           boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
           padding: 20,
+          order: isMobile ? 0 : 1,
         }}
       >
         <h2 style={{ marginTop: 0 }}>{selectedRecipe?.title ?? "Select a recipe"}</h2>
@@ -1030,7 +1033,7 @@ export default function RecipesWorkbench() {
               }}
             >
               <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Version History</h3>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 8, marginBottom: 10 }}>
                 <input
                   type="text"
                   value={versionNote}
@@ -1127,7 +1130,7 @@ export default function RecipesWorkbench() {
                 ))}
               </select>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 180px", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
                 <input
                   type="number"
                   min={0.01}
@@ -1212,7 +1215,7 @@ export default function RecipesWorkbench() {
             {recipeLines.length > 0 && (
               <>
                 <h3 style={{ marginBottom: 10 }}>Scale Preview</h3>
-                <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 10, marginBottom: 10 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "220px 1fr", gap: 10, marginBottom: 10 }}>
                   <input
                     type="number"
                     min={0.01}
