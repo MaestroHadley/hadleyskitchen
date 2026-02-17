@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase/server";
+import { supabaseServer } from "../../lib/supabase/server";
 import LogoutButton from "./logout-button";
 
 export default async function AppHome() {
