@@ -46,6 +46,14 @@ type AggregatedTotal = {
   missing_line_count: number;
 };
 
+function escapeCsv(value: string | number): string {
+  const s = String(value);
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
 export default function WeeklyPlanWorkbench() {
   const supabase = useMemo(() => supabaseBrowser(), []);
 
@@ -301,6 +309,42 @@ export default function WeeklyPlanWorkbench() {
   const activePlans = plans.filter((plan) => !plan.archived_at);
   const archivedPlans = plans.filter((plan) => !!plan.archived_at);
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
+
+  function exportTotalsCsv() {
+    if (!selectedPlan || totals.length === 0) return;
+
+    const header = [
+      "plan_title",
+      "week_start",
+      "week_end",
+      "ingredient_name",
+      "total_qty",
+      "canonical_unit",
+      "missing_line_count",
+    ];
+
+    const rows = totals.map((total) => [
+      selectedPlan.title,
+      selectedPlan.week_start,
+      selectedPlan.week_end,
+      total.ingredient_name,
+      Math.round(Number(total.total_qty) * 1000) / 1000,
+      total.canonical_unit,
+      total.missing_line_count,
+    ]);
+
+    const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const safeTitle = selectedPlan.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    a.download = `${safeTitle || "weekly-plan"}-${selectedPlan.week_start}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
@@ -558,6 +602,21 @@ export default function WeeklyPlanWorkbench() {
               <p style={{ margin: 0, color: "#4b5563" }}>No totals yet. Add planned recipes first.</p>
             ) : (
               <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={exportTotalsCsv}
+                    style={{
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      border: "1px solid #d1d5db",
+                      background: "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Export CSV
+                  </button>
+                </div>
                 {totals.map((total) => (
                   <div
                     key={total.ingredient_id}
