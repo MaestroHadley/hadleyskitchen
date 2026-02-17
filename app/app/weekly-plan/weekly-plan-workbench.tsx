@@ -23,6 +23,7 @@ type PlanItem = {
   id: string;
   recipe_id: string;
   qty: number;
+  ordered_qty?: number | null;
   recipes: {
     id: string;
     title: string;
@@ -124,20 +125,112 @@ export default function WeeklyPlanWorkbench() {
   }
 
   async function loadPlanItems(planId: string) {
-    const { data, error: itemsError } = await supabase
-      .from("plan_items")
-      .select("id,recipe_id,qty,recipes(id,title,yield_qty,yield_unit)")
-      .eq("plan_id", planId)
-      .order("id", { ascending: true });
+    let data: unknown[] | null = null;
+    let itemsError: { code?: string; message: string } | null = null;
+
+    // Try widest shape first (supports legacy ordered_qty + current qty).
+    {
+      const res = await supabase
+        .from("plan_items")
+        .select("id,recipe_id,qty,ordered_qty,recipes(id,title,yield_qty,yield_unit)")
+        .eq("plan_id", planId)
+        .order("id", { ascending: true });
+      data = res.data as unknown[] | null;
+      itemsError = res.error;
+    }
+
+    // Fallback for schemas without ordered_qty.
+    if (itemsError?.code === "42703") {
+      const res = await supabase
+        .from("plan_items")
+        .select("id,recipe_id,qty,recipes(id,title,yield_qty,yield_unit)")
+        .eq("plan_id", planId)
+        .order("id", { ascending: true });
+      data = res.data as unknown[] | null;
+      itemsError = res.error;
+    }
 
     if (itemsError) {
       setError(itemsError.message);
       return;
     }
 
-    const parsedItems = (data ?? []) as unknown as PlanItem[];
+    const parsedItems = ((data ?? []) as PlanItem[]).map((item) => ({
+      ...item,
+      qty: Number(item.qty ?? item.ordered_qty ?? 0),
+    }));
     setPlanItems(parsedItems);
     await recalculateTotals(parsedItems);
+  }
+
+  async function upsertPlanItemAdaptive(planId: string, recipeId: string, deltaQty: number) {
+    const existing = planItems.find((item) => item.recipe_id === recipeId);
+    const nextQty = Number(existing?.qty ?? existing?.ordered_qty ?? 0) + deltaQty;
+
+    if (existing) {
+      // Try updating both columns for mixed schemas.
+      {
+        const res = await supabase
+          .from("plan_items")
+          .update({ qty: nextQty, ordered_qty: nextQty })
+          .eq("id", existing.id);
+        if (!res.error) return;
+        if (res.error.code !== "42703") throw new Error(res.error.message);
+      }
+      // Fallback to qty-only schema.
+      {
+        const res = await supabase.from("plan_items").update({ qty: nextQty }).eq("id", existing.id);
+        if (!res.error) return;
+        if (res.error.code !== "42703") throw new Error(res.error.message);
+      }
+      // Fallback to ordered_qty-only schema.
+      {
+        const res = await supabase
+          .from("plan_items")
+          .update({ ordered_qty: nextQty })
+          .eq("id", existing.id);
+        if (!res.error) return;
+        throw new Error(res.error.message);
+      }
+    }
+
+    // Insert new row; try broadest shape first.
+    {
+      const res = await supabase.from("plan_items").insert([
+        {
+          plan_id: planId,
+          recipe_id: recipeId,
+          qty: deltaQty,
+          ordered_qty: deltaQty,
+        },
+      ]);
+      if (!res.error) return;
+      if (res.error.code !== "42703") throw new Error(res.error.message);
+    }
+    // Fallback qty-only.
+    {
+      const res = await supabase.from("plan_items").insert([
+        {
+          plan_id: planId,
+          recipe_id: recipeId,
+          qty: deltaQty,
+        },
+      ]);
+      if (!res.error) return;
+      if (res.error.code !== "42703") throw new Error(res.error.message);
+    }
+    // Fallback ordered_qty-only.
+    {
+      const res = await supabase.from("plan_items").insert([
+        {
+          plan_id: planId,
+          recipe_id: recipeId,
+          ordered_qty: deltaQty,
+        },
+      ]);
+      if (!res.error) return;
+      throw new Error(res.error.message);
+    }
   }
 
   async function recalculateTotals(items: PlanItem[]) {
@@ -250,16 +343,10 @@ export default function WeeklyPlanWorkbench() {
       return;
     }
 
-    const { error: itemError } = await supabase.from("plan_items").insert([
-      {
-        plan_id: selectedPlanId,
-        recipe_id: itemRecipeId,
-        qty: itemQty,
-      },
-    ]);
-
-    if (itemError) {
-      setError(itemError.message);
+    try {
+      await upsertPlanItemAdaptive(selectedPlanId, itemRecipeId, itemQty);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add recipe to plan.");
       return;
     }
 
