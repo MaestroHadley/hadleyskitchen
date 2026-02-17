@@ -186,49 +186,137 @@ where not exists (
     and rl.ingredient_id = i.id
 );
 
--- 5) Seed a weekly plan + plan item.
-with params as (
-  select id as owner_id
+-- 5) Seed a weekly plan + plan item (supports legacy column variants).
+do $$
+declare
+  v_owner uuid;
+  v_plan_id uuid;
+  v_recipe_id uuid;
+  v_has_weekly_name_col boolean;
+  v_has_qty_col boolean;
+  v_has_ordered_qty_col boolean;
+  v_has_quantity_col boolean;
+begin
+  select id into v_owner
   from auth.users
   where lower(email) = lower('hadleyskitchen@protonmail.com')
-  limit 1
-),
-plan_target as (
-  insert into public.weekly_plans (title, week_start, week_end, owner_id)
-  select
-    'QA Week Plan',
-    current_date,
-    current_date + 6,
-    p.owner_id
-  from params p
-  where not exists (
-    select 1 from public.weekly_plans wp
-    where wp.owner_id = p.owner_id
-      and wp.title = 'QA Week Plan'
-  )
-  returning id, owner_id
-),
-plan_resolved as (
-  select id, owner_id from plan_target
-  union all
-  select wp.id, wp.owner_id
-  from params p
-  join public.weekly_plans wp on wp.owner_id = p.owner_id and wp.title = 'QA Week Plan'
-),
-recipe_resolved as (
-  select r.id as recipe_id, r.owner_id
-  from params p
-  join public.recipes r on r.owner_id = p.owner_id and r.title = 'QA Country Loaf'
-)
-insert into public.plan_items (plan_id, recipe_id, qty, owner_id)
-select pr.id, rr.recipe_id, 3, pr.owner_id
-from plan_resolved pr
-join recipe_resolved rr on rr.owner_id = pr.owner_id
-where not exists (
-  select 1
-  from public.plan_items pi
-  where pi.plan_id = pr.id
-    and pi.recipe_id = rr.recipe_id
-);
+  limit 1;
+
+  if v_owner is null then
+    raise exception 'No auth.users row found for email: hadleyskitchen@protonmail.com';
+  end if;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'weekly_plans'
+      and column_name = 'name'
+  ) into v_has_weekly_name_col;
+
+  if v_has_weekly_name_col then
+    execute $sql$
+      insert into public.weekly_plans (name, title, week_start, week_end, owner_id)
+      select 'QA Week Plan', 'QA Week Plan', current_date, current_date + 6, $1
+      where not exists (
+        select 1
+        from public.weekly_plans wp
+        where wp.owner_id = $1
+          and (wp.title = 'QA Week Plan' or wp.name = 'QA Week Plan')
+      )
+    $sql$
+    using v_owner;
+  else
+    execute $sql$
+      insert into public.weekly_plans (title, week_start, week_end, owner_id)
+      select 'QA Week Plan', current_date, current_date + 6, $1
+      where not exists (
+        select 1
+        from public.weekly_plans wp
+        where wp.owner_id = $1
+          and wp.title = 'QA Week Plan'
+      )
+    $sql$
+    using v_owner;
+  end if;
+
+  execute $sql$
+    select wp.id
+    from public.weekly_plans wp
+    where wp.owner_id = $1
+      and (wp.title = 'QA Week Plan' or coalesce(wp.name, '') = 'QA Week Plan')
+    order by wp.created_at desc nulls last
+    limit 1
+  $sql$
+  into v_plan_id
+  using v_owner;
+
+  execute $sql$
+    select r.id
+    from public.recipes r
+    where r.owner_id = $1
+      and (r.title = 'QA Country Loaf' or coalesce(r.name, '') = 'QA Country Loaf')
+    limit 1
+  $sql$
+  into v_recipe_id
+  using v_owner;
+
+  if v_plan_id is null or v_recipe_id is null then
+    raise exception 'Could not resolve QA plan or QA recipe for plan item seeding.';
+  end if;
+
+  select exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='plan_items' and column_name='qty'
+  ) into v_has_qty_col;
+  select exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='plan_items' and column_name='ordered_qty'
+  ) into v_has_ordered_qty_col;
+  select exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='plan_items' and column_name='quantity'
+  ) into v_has_quantity_col;
+
+  if v_has_qty_col and v_has_ordered_qty_col then
+    execute $sql$
+      insert into public.plan_items (plan_id, recipe_id, qty, ordered_qty, owner_id)
+      select $1, $2, 3, 3, $3
+      where not exists (
+        select 1 from public.plan_items pi where pi.plan_id = $1 and pi.recipe_id = $2
+      )
+    $sql$
+    using v_plan_id, v_recipe_id, v_owner;
+  elsif v_has_qty_col then
+    execute $sql$
+      insert into public.plan_items (plan_id, recipe_id, qty, owner_id)
+      select $1, $2, 3, $3
+      where not exists (
+        select 1 from public.plan_items pi where pi.plan_id = $1 and pi.recipe_id = $2
+      )
+    $sql$
+    using v_plan_id, v_recipe_id, v_owner;
+  elsif v_has_ordered_qty_col then
+    execute $sql$
+      insert into public.plan_items (plan_id, recipe_id, ordered_qty, owner_id)
+      select $1, $2, 3, $3
+      where not exists (
+        select 1 from public.plan_items pi where pi.plan_id = $1 and pi.recipe_id = $2
+      )
+    $sql$
+    using v_plan_id, v_recipe_id, v_owner;
+  elsif v_has_quantity_col then
+    execute $sql$
+      insert into public.plan_items (plan_id, recipe_id, quantity, owner_id)
+      select $1, $2, 3, $3
+      where not exists (
+        select 1 from public.plan_items pi where pi.plan_id = $1 and pi.recipe_id = $2
+      )
+    $sql$
+    using v_plan_id, v_recipe_id, v_owner;
+  else
+    raise exception 'plan_items has no qty/ordered_qty/quantity column supported by seed script.';
+  end if;
+end $$;
 
 commit;
