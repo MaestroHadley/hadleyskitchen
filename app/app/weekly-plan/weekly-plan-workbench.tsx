@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/browser";
 import { useMobile } from "@/lib/use-mobile";
 
@@ -59,6 +59,7 @@ function escapeCsv(value: string | number): string {
 export default function WeeklyPlanWorkbench() {
   const supabase = useMemo(() => supabaseBrowser(), []);
   const isMobile = useMobile(980);
+  const addPlanItemFormRef = useRef<HTMLFormElement | null>(null);
 
   const [plans, setPlans] = useState<WeeklyPlan[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -441,6 +442,7 @@ export default function WeeklyPlanWorkbench() {
         display: "grid",
         gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 360px) minmax(0, 1fr)",
         gap: 18,
+        paddingBottom: isMobile ? 88 : 0,
       }}
     >
       <aside style={{ display: "grid", gap: 18, order: isMobile ? 1 : 0 }}>
@@ -609,7 +611,7 @@ export default function WeeklyPlanWorkbench() {
             <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
 
             <h3 style={{ marginTop: 0 }}>Add Recipe to Plan</h3>
-            <form onSubmit={addPlanItem} style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+            <form ref={addPlanItemFormRef} onSubmit={addPlanItem} style={{ display: "grid", gap: 10, marginBottom: 16 }}>
               <select
                 value={itemRecipeId}
                 onChange={(e) => setItemRecipeId(e.target.value)}
@@ -750,6 +752,59 @@ export default function WeeklyPlanWorkbench() {
         <div style={{ gridColumn: "1 / -1" }}>
           {error && <p style={{ margin: 0, color: "#b91c1c" }}>{error}</p>}
           {success && <p style={{ margin: 0, color: "#065f46" }}>{success}</p>}
+        </div>
+      )}
+
+      {isMobile && selectedPlan && (
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 40,
+            background: "rgba(255, 255, 255, 0.96)",
+            borderTop: "1px solid #d1d5db",
+            padding: "10px 12px calc(10px + env(safe-area-inset-bottom))",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => addPlanItemFormRef.current?.requestSubmit()}
+            disabled={!itemRecipeId || !(itemQty > 0)}
+            style={{
+              padding: "11px 12px",
+              borderRadius: 10,
+              border: "none",
+              background: "var(--hk-button)",
+              color: "#fff",
+              fontWeight: 700,
+              opacity: !itemRecipeId || !(itemQty > 0) ? 0.7 : 1,
+              cursor: !itemRecipeId || !(itemQty > 0) ? "not-allowed" : "pointer",
+            }}
+          >
+            Add to plan
+          </button>
+          <button
+            type="button"
+            onClick={exportTotalsCsv}
+            disabled={totals.length === 0}
+            style={{
+              padding: "11px 12px",
+              borderRadius: 10,
+              border: "1px solid #d1d5db",
+              background: "#fff",
+              fontWeight: 700,
+              opacity: totals.length === 0 ? 0.7 : 1,
+              cursor: totals.length === 0 ? "not-allowed" : "pointer",
+            }}
+          >
+            Export CSV
+          </button>
         </div>
       )}
     </div>
