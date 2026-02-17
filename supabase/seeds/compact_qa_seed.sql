@@ -193,6 +193,7 @@ declare
   v_plan_id uuid;
   v_recipe_id uuid;
   v_has_weekly_name_col boolean;
+  v_has_recipe_name_col boolean;
   v_has_qty_col boolean;
   v_has_ordered_qty_col boolean;
   v_has_quantity_col boolean;
@@ -213,6 +214,14 @@ begin
       and table_name = 'weekly_plans'
       and column_name = 'name'
   ) into v_has_weekly_name_col;
+
+  select exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'recipes'
+      and column_name = 'name'
+  ) into v_has_recipe_name_col;
 
   if v_has_weekly_name_col then
     execute $sql$
@@ -240,26 +249,51 @@ begin
     using v_owner;
   end if;
 
-  execute $sql$
-    select wp.id
-    from public.weekly_plans wp
-    where wp.owner_id = $1
-      and (wp.title = 'QA Week Plan' or coalesce(wp.name, '') = 'QA Week Plan')
-    order by wp.created_at desc nulls last
-    limit 1
-  $sql$
-  into v_plan_id
-  using v_owner;
+  if v_has_weekly_name_col then
+    execute $sql$
+      select wp.id
+      from public.weekly_plans wp
+      where wp.owner_id = $1
+        and (wp.title = 'QA Week Plan' or wp.name = 'QA Week Plan')
+      order by wp.week_start desc, wp.id desc
+      limit 1
+    $sql$
+    into v_plan_id
+    using v_owner;
+  else
+    execute $sql$
+      select wp.id
+      from public.weekly_plans wp
+      where wp.owner_id = $1
+        and wp.title = 'QA Week Plan'
+      order by wp.week_start desc, wp.id desc
+      limit 1
+    $sql$
+    into v_plan_id
+    using v_owner;
+  end if;
 
-  execute $sql$
-    select r.id
-    from public.recipes r
-    where r.owner_id = $1
-      and (r.title = 'QA Country Loaf' or coalesce(r.name, '') = 'QA Country Loaf')
-    limit 1
-  $sql$
-  into v_recipe_id
-  using v_owner;
+  if v_has_recipe_name_col then
+    execute $sql$
+      select r.id
+      from public.recipes r
+      where r.owner_id = $1
+        and (r.title = 'QA Country Loaf' or r.name = 'QA Country Loaf')
+      limit 1
+    $sql$
+    into v_recipe_id
+    using v_owner;
+  else
+    execute $sql$
+      select r.id
+      from public.recipes r
+      where r.owner_id = $1
+        and r.title = 'QA Country Loaf'
+      limit 1
+    $sql$
+    into v_recipe_id
+    using v_owner;
+  end if;
 
   if v_plan_id is null or v_recipe_id is null then
     raise exception 'Could not resolve QA plan or QA recipe for plan item seeding.';
