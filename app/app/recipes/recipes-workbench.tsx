@@ -359,6 +359,14 @@ export default function RecipesWorkbench() {
     }
 
     {
+      const { error: versionsError } = await supabase.from("recipe_versions").delete().eq("recipe_id", recipeId);
+      if (versionsError) {
+        setError(versionsError.message);
+        return;
+      }
+    }
+
+    {
       const { error: recipeError } = await supabase.from("recipes").delete().eq("id", recipeId);
       if (recipeError) {
         setError(recipeError.message);
@@ -375,6 +383,24 @@ export default function RecipesWorkbench() {
     }
 
     setSuccess("Recipe permanently deleted.");
+  }
+
+  async function deleteRecipeVersion(versionId: string) {
+    const confirmed = window.confirm("Delete this version snapshot?");
+    if (!confirmed) return;
+    setError(null);
+    setSuccess(null);
+
+    const { error: deleteError } = await supabase.from("recipe_versions").delete().eq("id", versionId);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    if (selectedRecipeId) {
+      await loadRecipeVersions(selectedRecipeId);
+    }
+    setSuccess("Version deleted.");
   }
 
   function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
@@ -1074,19 +1100,35 @@ export default function RecipesWorkbench() {
                         <strong>
                           v{version.version_number} - {version.title}
                         </strong>
-                        <button
-                          type="button"
-                          onClick={() => void restoreVersion(version.id)}
-                          style={{
-                            padding: "6px 8px",
-                            borderRadius: 8,
-                            border: "1px solid #d1d5db",
-                            background: "#fff",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Restore
-                        </button>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => void restoreVersion(version.id)}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: 8,
+                              border: "1px solid #d1d5db",
+                              background: "#fff",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Restore
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteRecipeVersion(version.id)}
+                            style={{
+                              padding: "6px 8px",
+                              borderRadius: 8,
+                              border: "1px solid #ef4444",
+                              color: "#b91c1c",
+                              background: "#fff",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div style={{ color: "#6b7280", fontSize: 12 }}>
                         {new Date(version.created_at).toLocaleString()} - {version.note || "No note"}

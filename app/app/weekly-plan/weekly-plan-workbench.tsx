@@ -121,9 +121,10 @@ export default function WeeklyPlanWorkbench() {
     setPlans(parsedPlans);
     setRecipes(parsedRecipes.filter((r) => !r.archived_at));
 
-    if (!selectedPlanId) {
-      const firstActivePlan = parsedPlans.find((p) => !p.archived_at);
-      setSelectedPlanId(firstActivePlan?.id ?? null);
+    // Intentionally do not auto-select a plan.
+    // Users should explicitly choose the plan they want to edit/export.
+    if (selectedPlanId && !parsedPlans.some((p) => p.id === selectedPlanId)) {
+      setSelectedPlanId(null);
     }
   }
 

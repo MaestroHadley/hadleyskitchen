@@ -1,4 +1,3 @@
-import Link from "next/link";
 import RecipesWorkbench from "./recipes-workbench";
 
 export default function RecipesPage() {
@@ -11,20 +10,6 @@ export default function RecipesPage() {
             Create recipes, write instructions, and build ingredient lines with units.
           </p>
         </div>
-        <Link
-          href="/app"
-          style={{
-            textDecoration: "none",
-            color: "#1f2937",
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "1px solid #d1d5db",
-            background: "#ffffff",
-            fontWeight: 600,
-          }}
-        >
-          Back to dashboard
-        </Link>
       </header>
 
       <div style={{ marginTop: 18 }}>

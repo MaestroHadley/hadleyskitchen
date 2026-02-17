@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import AddIngredientForm from "./add-ingredient-form";
 import ManageIngredientsList from "./manage-ingredients-list";
@@ -33,20 +32,6 @@ export default async function IngredientsPage() {
             Manage your custom ingredients and browse shared baking defaults.
           </p>
         </div>
-        <Link
-          href="/app"
-          style={{
-            textDecoration: "none",
-            color: "#1f2937",
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "1px solid #d1d5db",
-            background: "#ffffff",
-            fontWeight: 600,
-          }}
-        >
-          Back to dashboard
-        </Link>
       </header>
 
       <div style={{ marginTop: 18, display: "grid", gap: 18 }}>

@@ -53,20 +53,6 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             Resolve missing ingredient conversions used by your recipe lines.
           </p>
         </div>
-        <Link
-          href="/app"
-          style={{
-            textDecoration: "none",
-            color: "#1f2937",
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "1px solid #d1d5db",
-            background: "#ffffff",
-            fontWeight: 600,
-          }}
-        >
-          Back to dashboard
-        </Link>
       </header>
 
       <div style={{ marginTop: 18, display: "grid", gap: 18 }}>

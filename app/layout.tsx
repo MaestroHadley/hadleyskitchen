@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AppShellNav from "./app-shell-nav";
 
 export const metadata: Metadata = {
   title: "Hadley’s Kitchen",
@@ -16,6 +17,7 @@ export default function RootLayout({
       <body>
         <div className="hk-shell">
           <div className="hk-topbar" />
+          <AppShellNav />
           <div className="hk-content">{children}</div>
           <footer className="hk-footer">Hadley&apos;s Kitchen</footer>
         </div>
