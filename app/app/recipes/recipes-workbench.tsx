@@ -338,6 +338,43 @@ export default function RecipesWorkbench() {
     setSuccess(archived ? "Recipe archived." : "Recipe restored.");
   }
 
+  async function deleteRecipePermanently(recipeId: string) {
+    const confirmed = window.confirm(
+      "Delete this recipe permanently? This will remove its version history and plan references."
+    );
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccess(null);
+
+    // Remove plan references first because plan_items.recipe_id is NO ACTION.
+    {
+      const { error: planItemError } = await supabase.from("plan_items").delete().eq("recipe_id", recipeId);
+      if (planItemError) {
+        setError(planItemError.message);
+        return;
+      }
+    }
+
+    {
+      const { error: recipeError } = await supabase.from("recipes").delete().eq("id", recipeId);
+      if (recipeError) {
+        setError(recipeError.message);
+        return;
+      }
+    }
+
+    await loadRecipesAndIngredients();
+    if (selectedRecipeId === recipeId) {
+      const next = recipes.find((r) => r.id !== recipeId && !r.archived_at);
+      setSelectedRecipeId(next?.id ?? null);
+      setRecipeLines([]);
+      setRecipeVersions([]);
+    }
+
+    setSuccess("Recipe permanently deleted.");
+  }
+
   function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
     setFn((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
   }
@@ -580,19 +617,35 @@ export default function RecipesWorkbench() {
                     }}
                   >
                     <span style={{ color: "#6b7280" }}>{recipe.title}</span>
-                    <button
-                      type="button"
-                      onClick={() => void setRecipeArchived(recipe.id, false)}
-                      style={{
-                        border: "1px solid #d1d5db",
-                        background: "#fff",
-                        borderRadius: 8,
-                        padding: "6px 8px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Restore
-                    </button>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => void setRecipeArchived(recipe.id, false)}
+                        style={{
+                          border: "1px solid #d1d5db",
+                          background: "#fff",
+                          borderRadius: 8,
+                          padding: "6px 8px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Restore
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteRecipePermanently(recipe.id)}
+                        style={{
+                          border: "1px solid #ef4444",
+                          color: "#b91c1c",
+                          background: "#fff",
+                          borderRadius: 8,
+                          padding: "6px 8px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -905,19 +958,35 @@ export default function RecipesWorkbench() {
               </button>
             </div>
             <div style={{ marginBottom: 10 }}>
-              <button
-                type="button"
-                onClick={() => void setRecipeArchived(selectedRecipe.id, true)}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                Archive recipe
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => void setRecipeArchived(selectedRecipe.id, true)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Archive recipe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void deleteRecipePermanently(selectedRecipe.id)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #ef4444",
+                    color: "#b91c1c",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Delete permanently
+                </button>
+              </div>
             </div>
             <div
               style={{

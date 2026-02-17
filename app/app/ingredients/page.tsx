@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
 import AddIngredientForm from "./add-ingredient-form";
+import ManageIngredientsList from "./manage-ingredients-list";
 
 type IngredientRow = {
   id: string;
@@ -61,19 +62,7 @@ export default async function IngredientsPage() {
           }}
         >
           <h2 style={{ margin: "0 0 10px" }}>Your Ingredients</h2>
-          {myIngredients.length === 0 ? (
-            <p style={{ margin: 0, color: "#4b5563" }}>
-              No custom ingredients yet. Add one above.
-            </p>
-          ) : (
-            <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
-              {myIngredients.map((item) => (
-                <li key={item.id}>
-                  <strong>{item.name}</strong> <span style={{ color: "#4b5563" }}>({item.unit_type})</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ManageIngredientsList items={myIngredients} />
         </section>
 
         <section
