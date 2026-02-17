@@ -93,7 +93,7 @@ export default function SignupPage() {
               padding: "11px 12px",
               borderRadius: 10,
               border: "none",
-              background: "#1f2937",
+              background: "var(--hk-button)",
               color: "#ffffff",
               fontWeight: 700,
               cursor: loading ? "not-allowed" : "pointer",

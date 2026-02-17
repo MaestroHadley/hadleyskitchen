@@ -13,18 +13,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          minHeight: "100vh",
-          background:
-            "radial-gradient(circle at 20% -10%, #f4efe3 0%, #fbfaf7 35%, #f8f7f3 100%)",
-          color: "#1f2937",
-          fontFamily:
-            "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-        }}
-      >
-        <div style={{ minHeight: "100vh" }}>{children}</div>
+      <body>
+        <div className="hk-shell">
+          <div className="hk-topbar" />
+          <div className="hk-content">{children}</div>
+          <footer className="hk-footer">Hadley&apos;s Kitchen</footer>
+        </div>
       </body>
     </html>
   );

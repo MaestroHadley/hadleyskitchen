@@ -184,7 +184,7 @@ export default function AddConversionForm({ ingredients, missing }: AddConversio
             padding: "10px 12px",
             borderRadius: 10,
             border: "none",
-            background: "#1f2937",
+            background: "var(--hk-button)",
             color: "#fff",
             fontWeight: 700,
             cursor: saving ? "not-allowed" : "pointer",

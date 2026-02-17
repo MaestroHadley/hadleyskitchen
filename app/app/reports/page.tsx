@@ -107,7 +107,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
                   padding: "10px 12px",
                   borderRadius: 10,
                   border: "none",
-                  background: "#1f2937",
+                  background: "var(--hk-button)",
                   color: "#fff",
                   fontWeight: 700,
                   cursor: "pointer",
