@@ -401,6 +401,7 @@ export default function RecipesWorkbench() {
       await loadRecipeVersions(selectedRecipeId);
     }
     setSuccess("Version deleted.");
+    window.location.reload();
   }
 
   function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
@@ -538,7 +539,7 @@ export default function RecipesWorkbench() {
         gap: 18,
       }}
     >
-      <aside style={{ display: "grid", gap: 18, order: isMobile ? 1 : 0 }}>
+      <aside style={{ display: "grid", gap: 18 }}>
         <section
           style={{
             background: "#ffffff",
@@ -934,7 +935,6 @@ export default function RecipesWorkbench() {
           borderRadius: 14,
           boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
           padding: 20,
-          order: isMobile ? 0 : 1,
         }}
       >
         <h2 style={{ marginTop: 0 }}>{selectedRecipe?.title ?? "Select a recipe"}</h2>
