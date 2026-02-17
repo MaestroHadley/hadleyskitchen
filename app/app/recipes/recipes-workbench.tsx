@@ -101,6 +101,7 @@ export default function RecipesWorkbench() {
   const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
   const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
   const [versionNote, setVersionNote] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -500,6 +501,12 @@ export default function RecipesWorkbench() {
   });
   const activeRecipes = filteredRecipes.filter((r) => !r.archived_at);
   const archivedRecipes = filteredRecipes.filter((r) => !!r.archived_at);
+  const recipesByCategory = activeRecipes.reduce<Record<string, Recipe[]>>((acc, recipe) => {
+    const key = recipe.category?.trim() || "uncategorized";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(recipe);
+    return acc;
+  }, {});
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
@@ -513,7 +520,23 @@ export default function RecipesWorkbench() {
             padding: 20,
           }}
         >
-          <h2 style={{ margin: "0 0 10px" }}>Your Recipes</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <h2 style={{ margin: "0 0 10px" }}>Your Recipes</h2>
+            <button
+              type="button"
+              onClick={() => setShowCreateForm((prev) => !prev)}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid #d1d5db",
+                background: "#fff",
+                cursor: "pointer",
+                marginBottom: 10,
+              }}
+            >
+              {showCreateForm ? "Hide New Recipe" : "Add New Recipe"}
+            </button>
+          </div>
           <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
             <div style={{ color: "#6b7280", fontSize: 13 }}>Filter by allergen tags</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -566,38 +589,40 @@ export default function RecipesWorkbench() {
           {!loading && activeRecipes.length === 0 && (
             <p style={{ margin: 0, color: "#4b5563" }}>No recipes yet. Create your first one below.</p>
           )}
-          <div style={{ display: "grid", gap: 8 }}>
-            {activeRecipes.map((recipe) => {
-              const active = selectedRecipeId === recipe.id;
-              return (
-                <button
-                  key={recipe.id}
-                  type="button"
-                  onClick={() => setSelectedRecipeId(recipe.id)}
-                  style={{
-                    textAlign: "left",
-                    padding: "10px 12px",
-                    borderRadius: 10,
-                    border: active ? "1px solid #111827" : "1px solid #d1d5db",
-                    background: active ? "#f3f4f6" : "#ffffff",
-                    color: "#111827",
-                    cursor: "pointer",
-                  }}
-                >
-                  {recipe.title}
-                  {recipe.category && (
-                    <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 12 }}>
-                      [{recipe.category}]
-                    </span>
-                  )}
-                  {!!recipe.yield_qty && (
-                    <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 12 }}>
-                      {recipe.yield_qty} {recipe.yield_unit ?? "batch"}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div style={{ display: "grid", gap: 10 }}>
+            {Object.entries(recipesByCategory)
+              .sort((a, b) => a[0].localeCompare(b[0]))
+              .map(([category, categoryRecipes]) => (
+                <div key={category} style={{ display: "grid", gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: 14, color: "#6b7280" }}>{category}</h3>
+                  {categoryRecipes.map((recipe) => {
+                    const active = selectedRecipeId === recipe.id;
+                    return (
+                      <button
+                        key={recipe.id}
+                        type="button"
+                        onClick={() => setSelectedRecipeId(recipe.id)}
+                        style={{
+                          textAlign: "left",
+                          padding: "10px 12px",
+                          borderRadius: 10,
+                          border: active ? "1px solid #111827" : "1px solid #d1d5db",
+                          background: active ? "#f3f4f6" : "#ffffff",
+                          color: "#111827",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {recipe.title}
+                        {!!recipe.yield_qty && (
+                          <span style={{ marginLeft: 8, color: "#6b7280", fontSize: 12 }}>
+                            {recipe.yield_qty} {recipe.yield_unit ?? "batch"}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
           </div>
           {archivedRecipes.length > 0 && (
             <div style={{ marginTop: 12 }}>
@@ -663,9 +688,13 @@ export default function RecipesWorkbench() {
           }}
         >
           <h2 style={{ margin: "0 0 10px" }}>New Recipe</h2>
-          <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
+          <p style={{ margin: "0 0 10px", color: "#4b5563" }}>
+            Add a recipe with clear steps so anyone on your team can follow the process.
+          </p>
+          {showCreateForm ? (
+            <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
             <input
-              placeholder="Title"
+              placeholder="Recipe title (e.g. Country Sourdough)"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               required
@@ -695,7 +724,7 @@ export default function RecipesWorkbench() {
               <input
                 value={newYieldUnit}
                 onChange={(e) => setNewYieldUnit(e.target.value)}
-                placeholder="yield unit"
+                placeholder="yield unit (e.g. loaf)"
                 required
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
@@ -707,7 +736,7 @@ export default function RecipesWorkbench() {
                 step={1}
                 value={newFermentationMinutes}
                 onChange={(e) => setNewFermentationMinutes(e.target.value)}
-                placeholder="fermentation min"
+                placeholder="fermentation minutes"
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
               <input
@@ -716,7 +745,7 @@ export default function RecipesWorkbench() {
                 step={1}
                 value={newProofMinutes}
                 onChange={(e) => setNewProofMinutes(e.target.value)}
-                placeholder="proof min"
+                placeholder="proof minutes"
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
@@ -727,7 +756,7 @@ export default function RecipesWorkbench() {
                 step={1}
                 value={newBakeTempF}
                 onChange={(e) => setNewBakeTempF(e.target.value)}
-                placeholder="bake temp F"
+                placeholder="bake temp (F)"
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
               <input
@@ -736,7 +765,7 @@ export default function RecipesWorkbench() {
                 step={1}
                 value={newBakeMinutes}
                 onChange={(e) => setNewBakeMinutes(e.target.value)}
-                placeholder="bake min"
+                placeholder="bake minutes"
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
@@ -791,17 +820,17 @@ export default function RecipesWorkbench() {
               </div>
             </div>
             <textarea
-              placeholder="Description (optional)"
+              placeholder="Description (optional): what is this recipe for?"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
               rows={3}
               style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
             />
             <textarea
-              placeholder="Instructions (optional)"
+              placeholder="Instructions (recommended): write clear step-by-step baking directions."
               value={newInstructions}
               onChange={(e) => setNewInstructions(e.target.value)}
-              rows={5}
+              rows={6}
               style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
             />
             <button
@@ -818,7 +847,10 @@ export default function RecipesWorkbench() {
             >
               Create recipe
             </button>
-          </form>
+            </form>
+          ) : (
+            <p style={{ margin: 0, color: "#6b7280" }}>Click “Add New Recipe” above to open the form.</p>
+          )}
         </section>
 
         <section
@@ -1064,12 +1096,18 @@ export default function RecipesWorkbench() {
                 </div>
               )}
             </div>
-            <p style={{ marginTop: 0, color: "#4b5563" }}>
-              {selectedRecipe.description?.trim() || "No description yet."}
-            </p>
-            <p style={{ whiteSpace: "pre-wrap", color: "#374151" }}>
-              {selectedRecipe.instructions?.trim() || "No instructions yet."}
-            </p>
+            <div style={{ marginTop: 4 }}>
+              <strong>Description</strong>
+              <p style={{ margin: "4px 0 10px", color: "#4b5563" }}>
+                {selectedRecipe.description?.trim() || "No description yet."}
+              </p>
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <strong>Instructions</strong>
+              <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap", color: "#374151" }}>
+                {selectedRecipe.instructions?.trim() || "No instructions yet."}
+              </p>
+            </div>
 
             <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
 
