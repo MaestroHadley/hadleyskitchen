@@ -14,6 +14,10 @@ type Recipe = {
   description: string | null;
   instructions: string | null;
   archived_at: string | null;
+  fermentation_minutes: number | null;
+  proof_minutes: number | null;
+  bake_temp_f: number | null;
+  bake_minutes: number | null;
 };
 
 type Ingredient = {
@@ -46,6 +50,10 @@ export default function RecipesWorkbench() {
   const [newCategory, setNewCategory] = useState<RecipeCategory>("bread");
   const [newYieldQty, setNewYieldQty] = useState<number>(1);
   const [newYieldUnit, setNewYieldUnit] = useState("batch");
+  const [newFermentationMinutes, setNewFermentationMinutes] = useState<string>("");
+  const [newProofMinutes, setNewProofMinutes] = useState<string>("");
+  const [newBakeTempF, setNewBakeTempF] = useState<string>("");
+  const [newBakeMinutes, setNewBakeMinutes] = useState<string>("");
   const [newDescription, setNewDescription] = useState("");
   const [newInstructions, setNewInstructions] = useState("");
 
@@ -90,7 +98,9 @@ export default function RecipesWorkbench() {
       await Promise.all([
         supabase
           .from("recipes")
-          .select("id,title,category,yield_qty,yield_unit,description,instructions,archived_at")
+          .select(
+            "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes"
+          )
           .order("title", { ascending: true }),
         supabase
           .from("ingredients")
@@ -151,12 +161,18 @@ export default function RecipesWorkbench() {
           category: newCategory,
           yield_qty: newYieldQty,
           yield_unit: newYieldUnit.trim() || "batch",
+          fermentation_minutes: newFermentationMinutes ? Number(newFermentationMinutes) : null,
+          proof_minutes: newProofMinutes ? Number(newProofMinutes) : null,
+          bake_temp_f: newBakeTempF ? Number(newBakeTempF) : null,
+          bake_minutes: newBakeMinutes ? Number(newBakeMinutes) : null,
           description: newDescription.trim() || null,
           instructions: newInstructions.trim() || null,
           archived_at: null,
         },
       ])
-      .select("id,title,category,yield_qty,yield_unit,description,instructions,archived_at")
+      .select(
+        "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes"
+      )
       .single();
 
     if (insertError) {
@@ -171,6 +187,10 @@ export default function RecipesWorkbench() {
     setNewCategory("bread");
     setNewYieldQty(1);
     setNewYieldUnit("batch");
+    setNewFermentationMinutes("");
+    setNewProofMinutes("");
+    setNewBakeTempF("");
+    setNewBakeMinutes("");
     setNewDescription("");
     setNewInstructions("");
     setSuccess("Recipe created.");
@@ -427,6 +447,46 @@ export default function RecipesWorkbench() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               />
             </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={newFermentationMinutes}
+                onChange={(e) => setNewFermentationMinutes(e.target.value)}
+                placeholder="fermentation min"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={newProofMinutes}
+                onChange={(e) => setNewProofMinutes(e.target.value)}
+                placeholder="proof min"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={newBakeTempF}
+                onChange={(e) => setNewBakeTempF(e.target.value)}
+                placeholder="bake temp F"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={newBakeMinutes}
+                onChange={(e) => setNewBakeMinutes(e.target.value)}
+                placeholder="bake min"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+            </div>
             <textarea
               placeholder="Description (optional)"
               value={newDescription}
@@ -521,6 +581,11 @@ export default function RecipesWorkbench() {
             </p>
             <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
               Yield: {selectedRecipe.yield_qty ?? 1} {selectedRecipe.yield_unit ?? "batch"}
+            </p>
+            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
+              Prep: ferment {selectedRecipe.fermentation_minutes ?? "-"} min, proof{" "}
+              {selectedRecipe.proof_minutes ?? "-"} min, bake {selectedRecipe.bake_temp_f ?? "-"} F for{" "}
+              {selectedRecipe.bake_minutes ?? "-"} min
             </p>
             <div style={{ marginBottom: 10 }}>
               <button
