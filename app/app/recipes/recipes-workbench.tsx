@@ -296,7 +296,7 @@ export default function RecipesWorkbench() {
 
   async function deleteRecipePermanently(recipeId: string) {
     const confirmed = window.confirm(
-      "Delete this recipe permanently? This will remove its version history and plan references."
+      "Delete this recipe permanently? This will remove plan references too."
     );
     if (!confirmed) return;
 
@@ -308,14 +308,6 @@ export default function RecipesWorkbench() {
       const { error: planItemError } = await supabase.from("plan_items").delete().eq("recipe_id", recipeId);
       if (planItemError) {
         setError(planItemError.message);
-        return;
-      }
-    }
-
-    {
-      const { error: versionsError } = await supabase.from("recipe_versions").delete().eq("recipe_id", recipeId);
-      if (versionsError) {
-        setError(versionsError.message);
         return;
       }
     }
