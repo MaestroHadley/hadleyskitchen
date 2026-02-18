@@ -1,22 +1,6 @@
--- Treat sourdough starter as 50/50 flour + water in aggregate totals.
--- Also ensure shared default sourdough starter exists in grams.
+-- Follow-up: route sourdough starter split to All-purpose flour specifically.
 
 begin;
-
-insert into public.ingredients (name, unit_type, owner_id)
-select 'Sourdough starter', 'g', null::uuid
-where not exists (
-  select 1
-  from public.ingredients i
-  where i.owner_id is null
-    and lower(i.name) = 'sourdough starter'
-);
-
-update public.ingredients
-set unit_type = 'g'
-where owner_id is null
-  and lower(name) = 'sourdough starter'
-  and lower(unit_type) <> 'g';
 
 create or replace function public.aggregate_ingredient_lines(
   p_lines jsonb,
@@ -77,7 +61,6 @@ as $$
       ) as flour_id
   ),
   expanded as (
-    -- Keep all non-starter lines as-is.
     select
       c.ingredient_id,
       c.ingredient_name,
@@ -89,7 +72,6 @@ as $$
 
     union all
 
-    -- Expand starter to water when both targets exist.
     select
       st.water_id as ingredient_id,
       wi.name as ingredient_name,
@@ -105,7 +87,6 @@ as $$
 
     union all
 
-    -- Expand starter to flour when both targets exist.
     select
       st.flour_id as ingredient_id,
       fi.name as ingredient_name,
@@ -121,7 +102,6 @@ as $$
 
     union all
 
-    -- Fallback: if targets are missing, keep starter line to avoid dropping totals.
     select
       c.ingredient_id,
       c.ingredient_name,
