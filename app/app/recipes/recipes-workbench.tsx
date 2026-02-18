@@ -1127,135 +1127,179 @@ export default function RecipesWorkbench() {
             <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
 
             <h3 style={{ marginTop: 0 }}>Add Ingredient Line</h3>
-            <form
-              onSubmit={addIngredientAndLine}
-              style={{
-                display: "grid",
-                gap: 10,
-                marginBottom: 12,
-                padding: "10px 12px",
-                border: "1px dashed #d1d5db",
-                borderRadius: 10,
-                background: "#fffdfa",
-              }}
-            >
-              <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>
-                Need a brand-new ingredient? Add it here and it will be added to this recipe immediately.
-              </p>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: 10 }}>
-                <input
-                  placeholder="New ingredient name"
-                  value={inlineIngredientName}
-                  onChange={(e) => setInlineIngredientName(e.target.value)}
-                  required
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <select
-                  value={inlineIngredientUnit}
-                  onChange={(e) => {
-                    const next = e.target.value as UnitOption;
-                    setInlineIngredientUnit(next);
-                    setInlineIngredientLineUnit(next);
-                  }}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                >
-                  {UNIT_OPTIONS.map((unit) => (
-                    <option key={`inline-base-${unit}`} value={unit}>
-                      canonical: {unit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  value={inlineIngredientQty}
-                  onChange={(e) => setInlineIngredientQty(e.target.value)}
-                  required
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <select
-                  value={inlineIngredientLineUnit}
-                  onChange={(e) => setInlineIngredientLineUnit(e.target.value as UnitOption)}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                >
-                  {UNIT_OPTIONS.map((unit) => (
-                    <option key={`inline-line-${unit}`} value={unit}>
-                      line unit: {unit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button
-                type="submit"
+            <div style={{ display: "grid", gap: 12, marginBottom: 16 }}>
+              <form
+                onSubmit={addRecipeLine}
                 style={{
-                  width: "fit-content",
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                Add ingredient + line
-              </button>
-            </form>
-            <form onSubmit={addRecipeLine} style={{ display: "grid", gap: 10, marginBottom: 16 }}>
-              <select
-                value={lineIngredientId}
-                onChange={(e) => setLineIngredientId(e.target.value)}
-                required
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              >
-                <option value="">Select ingredient</option>
-                {ingredients.map((ingredient) => (
-                  <option key={ingredient.id} value={ingredient.id}>
-                    {ingredient.name} ({ingredient.unit_type})
-                  </option>
-                ))}
-              </select>
-
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  value={lineQtyInput}
-                  onChange={(e) => setLineQtyInput(e.target.value)}
-                  required
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <select
-                  value={lineUnit}
-                  onChange={(e) => setLineUnit(e.target.value)}
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                >
-                  {UNIT_OPTIONS.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {unit}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                style={{
-                  width: "fit-content",
-                  padding: "10px 12px",
+                  display: "grid",
+                  gap: 10,
+                  padding: "12px",
+                  border: "1px solid #e5e7eb",
                   borderRadius: 10,
-                  border: "none",
-                  background: "var(--hk-button)",
-                  color: "#fff",
-                  fontWeight: 700,
-                  cursor: "pointer",
+                  background: "#ffffff",
                 }}
               >
-                Add line
-              </button>
-            </form>
+                <div>
+                  <h4 style={{ margin: "0 0 4px", fontSize: 16 }}>Use existing ingredient</h4>
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>
+                    Pick an ingredient, set quantity and unit, then add the line.
+                  </p>
+                </div>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Ingredient</span>
+                  <select
+                    value={lineIngredientId}
+                    onChange={(e) => setLineIngredientId(e.target.value)}
+                    required
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  >
+                    <option value="">Select ingredient</option>
+                    {ingredients.map((ingredient) => (
+                      <option key={ingredient.id} value={ingredient.id}>
+                        {ingredient.name} ({ingredient.unit_type})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Quantity</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0.01}
+                      step="0.01"
+                      placeholder="e.g. 45"
+                      value={lineQtyInput}
+                      onChange={(e) => setLineQtyInput(e.target.value)}
+                      required
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Unit</span>
+                    <select
+                      value={lineUnit}
+                      onChange={(e) => setLineUnit(e.target.value)}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    >
+                      {UNIT_OPTIONS.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  style={{
+                    width: "fit-content",
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "var(--hk-button)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  Add line
+                </button>
+              </form>
+
+              <form
+                onSubmit={addIngredientAndLine}
+                style={{
+                  display: "grid",
+                  gap: 10,
+                  padding: "12px",
+                  border: "1px dashed #d1d5db",
+                  borderRadius: 10,
+                  background: "#fffdfa",
+                }}
+              >
+                <div>
+                  <h4 style={{ margin: "0 0 4px", fontSize: 16 }}>Create and add new ingredient</h4>
+                  <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>
+                    This creates the ingredient in your library and adds it to this recipe at once.
+                  </p>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Ingredient name</span>
+                    <input
+                      placeholder="e.g. Bread flour"
+                      value={inlineIngredientName}
+                      onChange={(e) => setInlineIngredientName(e.target.value)}
+                      required
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Canonical unit</span>
+                    <select
+                      value={inlineIngredientUnit}
+                      onChange={(e) => {
+                        const next = e.target.value as UnitOption;
+                        setInlineIngredientUnit(next);
+                        setInlineIngredientLineUnit(next);
+                      }}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    >
+                      {UNIT_OPTIONS.map((unit) => (
+                        <option key={`inline-base-${unit}`} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Starting quantity for this recipe</span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      min={0.01}
+                      step="0.01"
+                      placeholder="e.g. 45"
+                      value={inlineIngredientQty}
+                      onChange={(e) => setInlineIngredientQty(e.target.value)}
+                      required
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontSize: 13, color: "#4b5563" }}>Line unit</span>
+                    <select
+                      value={inlineIngredientLineUnit}
+                      onChange={(e) => setInlineIngredientLineUnit(e.target.value as UnitOption)}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                    >
+                      {UNIT_OPTIONS.map((unit) => (
+                        <option key={`inline-line-${unit}`} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  style={{
+                    width: "fit-content",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Add ingredient + line
+                </button>
+              </form>
+            </div>
 
             <h3 style={{ marginBottom: 10 }}>Ingredient Lines</h3>
             {recipeLines.length === 0 ? (
