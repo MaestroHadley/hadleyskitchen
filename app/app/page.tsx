@@ -48,7 +48,6 @@ export default async function AppHome() {
   let totals: AggregateRow[] = [];
   let totalsError: string | null = null;
   let recipeMix: Array<{ recipeId: string; label: string; count: number; category: string }> = [];
-  let categoryMix: Array<{ category: string; count: number }> = [];
 
   if (latestPlan?.id) {
     let planItems: PlanItemRow[] = [];
@@ -106,13 +105,6 @@ export default async function AppHome() {
           .filter((item) => item.count > 0)
           .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
-        const categoryCounts = new Map<string, number>();
-        for (const item of recipeMix) {
-          categoryCounts.set(item.category, (categoryCounts.get(item.category) ?? 0) + item.count);
-        }
-        categoryMix = [...categoryCounts.entries()]
-          .map(([category, count]) => ({ category, count }))
-          .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
       }
 
       const { data: linesData, error: linesError } = await supabase
@@ -191,27 +183,8 @@ export default async function AppHome() {
         <p style={{ margin: 0, color: "#4b5563" }}>
           Start by adding recipes and weekly order quantities. Latest plan totals are shown below.
         </p>
-        {latestPlan && (categoryMix.length > 0 || recipeMix.length > 0) && (
+        {latestPlan && recipeMix.length > 0 && (
           <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-            {categoryMix.length > 0 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {categoryMix.map((item) => (
-                  <div
-                    key={`cat-${item.category}`}
-                    style={{
-                      border: "1px solid #d1d5db",
-                      borderRadius: 999,
-                      padding: "6px 12px",
-                      background: "#fff",
-                      fontSize: 13,
-                      color: "#111827",
-                    }}
-                  >
-                    {item.count} {item.category}
-                  </div>
-                ))}
-              </div>
-            )}
             {recipeMix.length > 0 && (
               <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
                 {recipeMix.map((item) => (
