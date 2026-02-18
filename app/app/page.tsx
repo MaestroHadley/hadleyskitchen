@@ -9,6 +9,13 @@ type PlanItemRow = {
   quantity?: number | null;
 };
 
+type RecipeRow = {
+  id: string;
+  title: string | null;
+  name?: string | null;
+  category: string | null;
+};
+
 type RecipeLineRow = {
   recipe_id: string;
   ingredient_id: string;
@@ -40,6 +47,8 @@ export default async function AppHome() {
 
   let totals: AggregateRow[] = [];
   let totalsError: string | null = null;
+  let recipeMix: Array<{ recipeId: string; label: string; count: number; category: string }> = [];
+  let categoryMix: Array<{ category: string; count: number }> = [];
 
   if (latestPlan?.id) {
     let planItems: PlanItemRow[] = [];
@@ -71,6 +80,41 @@ export default async function AppHome() {
 
     if (!totalsError && planItems.length > 0) {
       const recipeIds = [...new Set(planItems.map((item) => item.recipe_id))];
+      const qtyByRecipeId = new Map<string, number>();
+      for (const item of planItems) {
+        const current = qtyByRecipeId.get(item.recipe_id) ?? 0;
+        const next = Number(item.qty ?? item.ordered_qty ?? item.quantity ?? 0);
+        qtyByRecipeId.set(item.recipe_id, current + next);
+      }
+
+      const { data: recipesData, error: recipesError } = await supabase
+        .from("recipes")
+        .select("id,title,name,category")
+        .in("id", recipeIds);
+      if (!recipesError) {
+        const recipes = (recipesData ?? []) as RecipeRow[];
+        recipeMix = recipes
+          .map((recipe) => {
+            const count = qtyByRecipeId.get(recipe.id) ?? 0;
+            return {
+              recipeId: recipe.id,
+              label: recipe.title?.trim() || recipe.name?.trim() || "Untitled recipe",
+              category: recipe.category?.trim() || "uncategorized",
+              count,
+            };
+          })
+          .filter((item) => item.count > 0)
+          .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+        const categoryCounts = new Map<string, number>();
+        for (const item of recipeMix) {
+          categoryCounts.set(item.category, (categoryCounts.get(item.category) ?? 0) + item.count);
+        }
+        categoryMix = [...categoryCounts.entries()]
+          .map(([category, count]) => ({ category, count }))
+          .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
+      }
+
       const { data: linesData, error: linesError } = await supabase
         .from("recipe_lines")
         .select("recipe_id,ingredient_id,qty,unit")
@@ -147,6 +191,48 @@ export default async function AppHome() {
         <p style={{ margin: 0, color: "#4b5563" }}>
           Start by adding recipes and weekly order quantities. Latest plan totals are shown below.
         </p>
+        {latestPlan && (categoryMix.length > 0 || recipeMix.length > 0) && (
+          <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+            {categoryMix.length > 0 && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {categoryMix.map((item) => (
+                  <div
+                    key={`cat-${item.category}`}
+                    style={{
+                      border: "1px solid #d1d5db",
+                      borderRadius: 999,
+                      padding: "6px 12px",
+                      background: "#fff",
+                      fontSize: 13,
+                      color: "#111827",
+                    }}
+                  >
+                    {item.count} {item.category}
+                  </div>
+                ))}
+              </div>
+            )}
+            {recipeMix.length > 0 && (
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+                {recipeMix.map((item) => (
+                  <div
+                    key={`recipe-${item.recipeId}`}
+                    style={{
+                      border: "1px solid #d1d5db",
+                      borderRadius: 999,
+                      padding: "8px 14px",
+                      background: "#fffdfa",
+                      whiteSpace: "nowrap",
+                      fontSize: 13,
+                    }}
+                  >
+                    {item.count} {item.label}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
         <h3 style={{ margin: "0 0 8px" }}>Current Aggregate Totals</h3>
         {!latestPlan && <p style={{ margin: 0, color: "#6b7280" }}>No current-week plan found yet.</p>}
