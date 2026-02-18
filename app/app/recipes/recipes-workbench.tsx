@@ -274,6 +274,7 @@ export default function RecipesWorkbench() {
       .from("recipes")
       .insert([
         {
+          name: title,
           title,
           category: newCategory,
           yield_qty: parsedYieldQty,
@@ -433,6 +434,7 @@ export default function RecipesWorkbench() {
     const { error: updateError } = await supabase
       .from("recipes")
       .update({
+        name: editTitle.trim(),
         title: editTitle.trim(),
         category: editCategory,
         yield_qty: parsedYieldQty,
