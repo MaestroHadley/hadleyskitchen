@@ -34,7 +34,7 @@ from params p
 join (
   values
     ('QA Bread Flour', 'g'),
-    ('QA Water', 'ml'),
+    ('QA Water', 'g'),
     ('QA Sea Salt', 'g'),
     ('QA Yeast', 'g')
 ) as v(name, unit_type) on true
@@ -175,7 +175,7 @@ join ing i on true
 join (
   values
     ('QA Bread Flour', 900::numeric, 'g'),
-    ('QA Water', 700::numeric, 'ml'),
+    ('QA Water', 700::numeric, 'g'),
     ('QA Sea Salt', 18::numeric, 'g'),
     ('QA Yeast', 3::numeric, 'g')
 ) as v(name, qty, unit) on v.name = i.name
