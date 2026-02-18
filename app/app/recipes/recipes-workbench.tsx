@@ -105,7 +105,10 @@ export default function RecipesWorkbench() {
   const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
   const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
   const [versionNote, setVersionNote] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    return window.sessionStorage.getItem("hk-hide-create-recipe-modal") !== "1";
+  });
   const [editTitle, setEditTitle] = useState("");
   const [editCategory, setEditCategory] = useState<RecipeCategory>("bread");
   const [editYieldQty, setEditYieldQty] = useState<string>("1");
@@ -123,6 +126,13 @@ export default function RecipesWorkbench() {
   useEffect(() => {
     void loadRecipesAndIngredients();
   }, []);
+
+  function hideCreateRecipeModal() {
+    setShowCreateForm(false);
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("hk-hide-create-recipe-modal", "1");
+    }
+  }
 
   useEffect(() => {
     if (selectedRecipeId) {
@@ -274,6 +284,8 @@ export default function RecipesWorkbench() {
 
     setVersionNote("");
     setSuccess("Version snapshot saved.");
+    hideCreateRecipeModal();
+    window.location.reload();
   }
 
   async function createRecipe(e: React.FormEvent) {
@@ -331,7 +343,7 @@ export default function RecipesWorkbench() {
     setNewDietaryTags([]);
     setNewDescription("");
     setNewInstructions("");
-    setShowCreateForm(false);
+    hideCreateRecipeModal();
     setSuccess("Recipe created.");
   }
 
@@ -432,28 +444,6 @@ export default function RecipesWorkbench() {
     setFn((prev) => (prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]));
   }
 
-  async function saveSelectedRecipeTags() {
-    if (!selectedRecipeId) return;
-    setError(null);
-    setSuccess(null);
-
-    const { error: updateError } = await supabase
-      .from("recipes")
-      .update({
-        allergen_tags: recipeAllergenTags,
-        dietary_tags: recipeDietaryTags,
-      })
-      .eq("id", selectedRecipeId);
-
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-
-    await loadRecipesAndIngredients();
-    setSuccess("Recipe tags updated.");
-  }
-
   async function saveSelectedRecipeDetails() {
     if (!selectedRecipeId) return;
     setError(null);
@@ -482,6 +472,8 @@ export default function RecipesWorkbench() {
         bake_minutes: editBakeMinutes ? Number(editBakeMinutes) : null,
         description: editDescription.trim() || null,
         instructions: editInstructions.trim() || null,
+        allergen_tags: recipeAllergenTags,
+        dietary_tags: recipeDietaryTags,
       })
       .eq("id", selectedRecipeId);
 
@@ -491,7 +483,7 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipesAndIngredients();
-    setSuccess("Recipe details updated.");
+    setSuccess("Recipe details and tags updated.");
   }
 
   async function addIngredientAndLine(e: React.FormEvent) {
@@ -824,94 +816,115 @@ export default function RecipesWorkbench() {
               }}
             >
               <h3 style={{ margin: 0, fontSize: 16 }}>Recipe Details</h3>
-              <input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Recipe title"
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <select
-                value={editCategory}
-                onChange={(e) => setEditCategory(e.target.value as RecipeCategory)}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              >
-                {RECIPE_CATEGORY_OPTIONS.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Recipe title</span>
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Category</span>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value as RecipeCategory)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                >
+                  {RECIPE_CATEGORY_OPTIONS.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 160px", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  value={editYieldQty}
-                  onChange={(e) => setEditYieldQty(e.target.value)}
-                  placeholder="Yield quantity"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  value={editYieldUnit}
-                  onChange={(e) => setEditYieldUnit(e.target.value)}
-                  placeholder="Yield unit"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Yield quantity</span>
+                  <input
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    value={editYieldQty}
+                    onChange={(e) => setEditYieldQty(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Yield unit</span>
+                  <input
+                    value={editYieldUnit}
+                    onChange={(e) => setEditYieldUnit(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={editFermentationMinutes}
-                  onChange={(e) => setEditFermentationMinutes(e.target.value)}
-                  placeholder="Fermentation minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={editProofMinutes}
-                  onChange={(e) => setEditProofMinutes(e.target.value)}
-                  placeholder="Proof minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Fermentation minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={editFermentationMinutes}
+                    onChange={(e) => setEditFermentationMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Proof minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={editProofMinutes}
+                    onChange={(e) => setEditProofMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={editBakeTempF}
-                  onChange={(e) => setEditBakeTempF(e.target.value)}
-                  placeholder="Bake temp (F)"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={editBakeMinutes}
-                  onChange={(e) => setEditBakeMinutes(e.target.value)}
-                  placeholder="Bake minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Bake temperature (F)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={editBakeTempF}
+                    onChange={(e) => setEditBakeTempF(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Bake minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={editBakeMinutes}
+                    onChange={(e) => setEditBakeMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
-              <textarea
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Description"
-                rows={2}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <textarea
-                value={editInstructions}
-                onChange={(e) => setEditInstructions(e.target.value)}
-                placeholder="Instructions"
-                rows={4}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Description (optional)</span>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={2}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Instructions</span>
+                <textarea
+                  value={editInstructions}
+                  onChange={(e) => setEditInstructions(e.target.value)}
+                  rows={4}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
               <button
                 type="button"
                 onClick={() => void saveSelectedRecipeDetails()}
@@ -928,7 +941,7 @@ export default function RecipesWorkbench() {
               </button>
             </div>
             <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
-              <div style={{ color: "#374151", fontWeight: 600 }}>Edit tags</div>
+              <div style={{ color: "#374151", fontWeight: 600 }}>Tags (saved with recipe details)</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {ALLERGEN_TAG_OPTIONS.map((tag) => {
                   const active = recipeAllergenTags.includes(tag);
@@ -973,20 +986,6 @@ export default function RecipesWorkbench() {
                   );
                 })}
               </div>
-              <button
-                type="button"
-                onClick={() => void saveSelectedRecipeTags()}
-                style={{
-                  width: "fit-content",
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                Save tags
-              </button>
             </div>
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", gap: 8 }}>
@@ -1415,7 +1414,7 @@ export default function RecipesWorkbench() {
               <h2 style={{ margin: 0 }}>New Recipe</h2>
               <button
                 type="button"
-                onClick={() => setShowCreateForm(false)}
+                onClick={hideCreateRecipeModal}
                 style={{
                   width: 34,
                   height: 34,
@@ -1435,96 +1434,122 @@ export default function RecipesWorkbench() {
               Add a recipe with clear steps so anyone on your team can follow the process.
             </p>
             <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
-              <input
-                placeholder="Recipe title (e.g. Country Sourdough)"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                required
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value as RecipeCategory)}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              >
-                {RECIPE_CATEGORY_OPTIONS.map((category) => (
-                  <option key={`modal-${category}`} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Recipe title</span>
+                <input
+                  placeholder="e.g. Country Sourdough"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Category</span>
+                <select
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value as RecipeCategory)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                >
+                  {RECIPE_CATEGORY_OPTIONS.map((category) => (
+                    <option key={`modal-${category}`} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 140px", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0.01}
-                  step="0.01"
-                  value={newYieldQty}
-                  onChange={(e) => setNewYieldQty(Number(e.target.value))}
-                  required
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  value={newYieldUnit}
-                  onChange={(e) => setNewYieldUnit(e.target.value)}
-                  placeholder="yield unit (e.g. loaf)"
-                  required
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Yield quantity</span>
+                  <input
+                    type="number"
+                    min={0.01}
+                    step="0.01"
+                    value={newYieldQty}
+                    onChange={(e) => setNewYieldQty(Number(e.target.value))}
+                    required
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Yield unit</span>
+                  <input
+                    value={newYieldUnit}
+                    onChange={(e) => setNewYieldUnit(e.target.value)}
+                    placeholder="e.g. loaf"
+                    required
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={newFermentationMinutes}
-                  onChange={(e) => setNewFermentationMinutes(e.target.value)}
-                  placeholder="fermentation minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={newProofMinutes}
-                  onChange={(e) => setNewProofMinutes(e.target.value)}
-                  placeholder="proof minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Fermentation minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={newFermentationMinutes}
+                    onChange={(e) => setNewFermentationMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Proof minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={newProofMinutes}
+                    onChange={(e) => setNewProofMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={newBakeTempF}
-                  onChange={(e) => setNewBakeTempF(e.target.value)}
-                  placeholder="bake temp (F)"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={newBakeMinutes}
-                  onChange={(e) => setNewBakeMinutes(e.target.value)}
-                  placeholder="bake minutes"
-                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                />
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Bake temperature (F)</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={newBakeTempF}
+                    onChange={(e) => setNewBakeTempF(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span style={{ fontSize: 13, color: "#4b5563" }}>Bake minutes</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={newBakeMinutes}
+                    onChange={(e) => setNewBakeMinutes(e.target.value)}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                  />
+                </label>
               </div>
-              <textarea
-                placeholder="Description (optional): what is this recipe for?"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                rows={3}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <textarea
-                placeholder="Instructions (recommended): write clear step-by-step baking directions."
-                value={newInstructions}
-                onChange={(e) => setNewInstructions(e.target.value)}
-                rows={6}
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Description (optional)</span>
+                <textarea
+                  placeholder="What is this recipe for?"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  rows={3}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Instructions</span>
+                <textarea
+                  placeholder="Write clear step-by-step baking directions."
+                  value={newInstructions}
+                  onChange={(e) => setNewInstructions(e.target.value)}
+                  rows={6}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
               <button
                 type="submit"
                 style={{
