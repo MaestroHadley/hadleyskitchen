@@ -75,7 +75,7 @@ export default function RecipesWorkbench() {
 
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<RecipeCategory>("bread");
-  const [newYieldQty, setNewYieldQty] = useState<number>(1);
+  const [newYieldQty, setNewYieldQty] = useState<string>("1");
   const [newYieldUnit, setNewYieldUnit] = useState("batch");
   const [newFermentationMinutes, setNewFermentationMinutes] = useState<string>("");
   const [newProofMinutes, setNewProofMinutes] = useState<string>("");
@@ -104,7 +104,6 @@ export default function RecipesWorkbench() {
   const [allergenFilters, setAllergenFilters] = useState<AllergenTag[]>([]);
   const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
   const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
-  const [versionNote, setVersionNote] = useState("");
   const [showCreateForm, setShowCreateForm] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
     return window.sessionStorage.getItem("hk-hide-create-recipe-modal") !== "1";
@@ -235,22 +234,6 @@ export default function RecipesWorkbench() {
     setRecipeVersions((data ?? []) as unknown as RecipeVersion[]);
   }
 
-  async function createVersionSnapshot(recipeId: string, note: string) {
-    const { error: snapshotError } = await supabase.rpc("create_recipe_version", {
-      p_recipe_id: recipeId,
-      p_note: note || null,
-    });
-
-    if (snapshotError) {
-      // If migrations are not applied yet, keep core UI actions working.
-      console.warn("create_recipe_version failed:", snapshotError.message);
-      return false;
-    }
-
-    await loadRecipeVersions(recipeId);
-    return true;
-  }
-
   async function restoreVersion(versionId: string) {
     if (!selectedRecipeId) return;
     setError(null);
@@ -271,23 +254,6 @@ export default function RecipesWorkbench() {
     setSuccess("Recipe restored from selected version.");
   }
 
-  async function saveVersionManually() {
-    if (!selectedRecipeId) return;
-    setError(null);
-    setSuccess(null);
-
-    const ok = await createVersionSnapshot(selectedRecipeId, versionNote.trim() || "Manual snapshot");
-    if (!ok) {
-      setError("Could not save version snapshot. Make sure Phase 6 SQL migration has been run.");
-      return;
-    }
-
-    setVersionNote("");
-    setSuccess("Version snapshot saved.");
-    hideCreateRecipeModal();
-    window.location.reload();
-  }
-
   async function createRecipe(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -298,6 +264,11 @@ export default function RecipesWorkbench() {
       setError("Recipe title must be at least 2 characters.");
       return;
     }
+    const parsedYieldQty = Number.parseFloat(newYieldQty);
+    if (!(parsedYieldQty > 0)) {
+      setError("Yield quantity must be greater than 0.");
+      return;
+    }
 
     const { data, error: insertError } = await supabase
       .from("recipes")
@@ -305,7 +276,7 @@ export default function RecipesWorkbench() {
         {
           title,
           category: newCategory,
-          yield_qty: newYieldQty,
+          yield_qty: parsedYieldQty,
           yield_unit: newYieldUnit.trim() || "batch",
           fermentation_minutes: newFermentationMinutes ? Number(newFermentationMinutes) : null,
           proof_minutes: newProofMinutes ? Number(newProofMinutes) : null,
@@ -333,7 +304,7 @@ export default function RecipesWorkbench() {
     setSelectedRecipeId(created.id);
     setNewTitle("");
     setNewCategory("bread");
-    setNewYieldQty(1);
+    setNewYieldQty("1");
     setNewYieldUnit("batch");
     setNewFermentationMinutes("");
     setNewProofMinutes("");
@@ -925,20 +896,6 @@ export default function RecipesWorkbench() {
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
                 />
               </label>
-              <button
-                type="button"
-                onClick={() => void saveSelectedRecipeDetails()}
-                style={{
-                  width: "fit-content",
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  border: "1px solid #d1d5db",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
-              >
-                Save recipe details
-              </button>
             </div>
             <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
               <div style={{ color: "#374151", fontWeight: 600 }}>Tags (saved with recipe details)</div>
@@ -1029,16 +986,12 @@ export default function RecipesWorkbench() {
             >
               <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>Version History</h3>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 8, marginBottom: 10 }}>
-                <input
-                  type="text"
-                  value={versionNote}
-                  onChange={(e) => setVersionNote(e.target.value)}
-                  placeholder="Snapshot note (optional)"
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #d1d5db" }}
-                />
+                <div style={{ alignSelf: "center", color: "#6b7280", fontSize: 13 }}>
+                  Save your current details and tags before reviewing or restoring versions.
+                </div>
                 <button
                   type="button"
-                  onClick={() => void saveVersionManually()}
+                  onClick={() => void saveSelectedRecipeDetails()}
                   style={{
                     padding: "8px 10px",
                     borderRadius: 8,
@@ -1047,7 +1000,7 @@ export default function RecipesWorkbench() {
                     cursor: "pointer",
                   }}
                 >
-                  Save snapshot
+                  Save recipe changes
                 </button>
               </div>
               {recipeVersions.length === 0 ? (
@@ -1433,6 +1386,7 @@ export default function RecipesWorkbench() {
             <p style={{ margin: "8px 0 12px", color: "#4b5563" }}>
               Add a recipe with clear steps so anyone on your team can follow the process.
             </p>
+            {error && <p style={{ margin: "0 0 10px", color: "#b91c1c" }}>{error}</p>}
             <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
               <label style={{ display: "grid", gap: 6 }}>
                 <span style={{ fontSize: 13, color: "#4b5563" }}>Recipe title</span>
@@ -1459,18 +1413,19 @@ export default function RecipesWorkbench() {
                 </select>
               </label>
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 140px", gap: 10 }}>
-                <label style={{ display: "grid", gap: 6 }}>
-                  <span style={{ fontSize: 13, color: "#4b5563" }}>Yield quantity</span>
-                  <input
-                    type="number"
-                    min={0.01}
-                    step="0.01"
-                    value={newYieldQty}
-                    onChange={(e) => setNewYieldQty(Number(e.target.value))}
-                    required
-                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-                  />
-                </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Yield quantity</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0.01}
+                  step="0.01"
+                  value={newYieldQty}
+                  onChange={(e) => setNewYieldQty(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </label>
                 <label style={{ display: "grid", gap: 6 }}>
                   <span style={{ fontSize: 13, color: "#4b5563" }}>Yield unit</span>
                   <input
