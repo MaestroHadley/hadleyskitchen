@@ -100,6 +100,10 @@ export default function RecipesWorkbench() {
   const [editBakeMinutes, setEditBakeMinutes] = useState<string>("");
   const [editDescription, setEditDescription] = useState("");
   const [editInstructions, setEditInstructions] = useState("");
+  const [isSavingRecipeDetails, setIsSavingRecipeDetails] = useState(false);
+  const [recipeSaveNotice, setRecipeSaveNotice] = useState<{ type: "success" | "error"; message: string } | null>(
+    null
+  );
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -336,15 +340,21 @@ export default function RecipesWorkbench() {
 
   async function saveSelectedRecipeDetails() {
     if (!selectedRecipeId) return;
+    setIsSavingRecipeDetails(true);
+    setRecipeSaveNotice(null);
     setError(null);
     setSuccess(null);
 
     const parsedYieldQty = Number.parseFloat(editYieldQty);
     if (!editTitle.trim()) {
+      setIsSavingRecipeDetails(false);
+      setRecipeSaveNotice({ type: "error", message: "Recipe title is required." });
       setError("Recipe title is required.");
       return;
     }
     if (!(parsedYieldQty > 0)) {
+      setIsSavingRecipeDetails(false);
+      setRecipeSaveNotice({ type: "error", message: "Yield quantity must be greater than 0." });
       setError("Yield quantity must be greater than 0.");
       return;
     }
@@ -369,11 +379,15 @@ export default function RecipesWorkbench() {
       .eq("id", selectedRecipeId);
 
     if (updateError) {
+      setIsSavingRecipeDetails(false);
+      setRecipeSaveNotice({ type: "error", message: updateError.message });
       setError(updateError.message);
       return;
     }
 
     await loadRecipesAndIngredients();
+    setIsSavingRecipeDetails(false);
+    setRecipeSaveNotice({ type: "success", message: "Recipe saved." });
     setSuccess("Recipe details and tags updated.");
   }
 
@@ -869,15 +883,17 @@ export default function RecipesWorkbench() {
                 <button
                   type="button"
                   onClick={() => void saveSelectedRecipeDetails()}
+                  disabled={isSavingRecipeDetails}
                   style={{
                     padding: "8px 10px",
                     borderRadius: 8,
                     border: "1px solid #d1d5db",
                     background: "#fff",
-                    cursor: "pointer",
+                    cursor: isSavingRecipeDetails ? "default" : "pointer",
+                    opacity: isSavingRecipeDetails ? 0.7 : 1,
                   }}
                 >
-                  Save recipe details
+                  {isSavingRecipeDetails ? "Saving..." : "Save recipe details"}
                 </button>
                 <button
                   type="button"
@@ -907,6 +923,18 @@ export default function RecipesWorkbench() {
                   Delete permanently
                 </button>
               </div>
+              {recipeSaveNotice && (
+                <p
+                  aria-live="polite"
+                  style={{
+                    margin: "8px 0 0",
+                    color: recipeSaveNotice.type === "error" ? "#b91c1c" : "#065f46",
+                    fontSize: 13,
+                  }}
+                >
+                  {recipeSaveNotice.message}
+                </p>
+              )}
             </div>
             <div style={{ marginTop: 4 }}>
               <strong>Description</strong>
