@@ -88,9 +88,11 @@ export default function RecipesWorkbench() {
 
   const [inlineIngredientName, setInlineIngredientName] = useState("");
   const [inlineIngredientUnit, setInlineIngredientUnit] = useState<UnitOption>("g");
+  const [inlineIngredientQty, setInlineIngredientQty] = useState<string>("");
+  const [inlineIngredientLineUnit, setInlineIngredientLineUnit] = useState<UnitOption>("g");
 
   const [lineIngredientId, setLineIngredientId] = useState("");
-  const [lineQty, setLineQty] = useState<number>(1);
+  const [lineQtyInput, setLineQtyInput] = useState<string>("");
   const [lineUnit, setLineUnit] = useState<string>("g");
 
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +105,17 @@ export default function RecipesWorkbench() {
   const [dietaryFilters, setDietaryFilters] = useState<DietaryTag[]>([]);
   const [recipeVersions, setRecipeVersions] = useState<RecipeVersion[]>([]);
   const [versionNote, setVersionNote] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(true);
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState<RecipeCategory>("bread");
+  const [editYieldQty, setEditYieldQty] = useState<string>("1");
+  const [editYieldUnit, setEditYieldUnit] = useState("batch");
+  const [editFermentationMinutes, setEditFermentationMinutes] = useState<string>("");
+  const [editProofMinutes, setEditProofMinutes] = useState<string>("");
+  const [editBakeTempF, setEditBakeTempF] = useState<string>("");
+  const [editBakeMinutes, setEditBakeMinutes] = useState<string>("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editInstructions, setEditInstructions] = useState("");
 
   const selectedRecipe = recipes.find((r) => r.id === selectedRecipeId) ?? null;
   const selectedIngredient = ingredients.find((i) => i.id === lineIngredientId) ?? null;
@@ -132,6 +144,18 @@ export default function RecipesWorkbench() {
     if (!selectedRecipe) return;
     setRecipeAllergenTags((selectedRecipe.allergen_tags ?? []) as AllergenTag[]);
     setRecipeDietaryTags((selectedRecipe.dietary_tags ?? []) as DietaryTag[]);
+    setEditTitle(selectedRecipe.title ?? "");
+    setEditCategory((selectedRecipe.category as RecipeCategory) ?? "bread");
+    setEditYieldQty(String(selectedRecipe.yield_qty ?? 1));
+    setEditYieldUnit(selectedRecipe.yield_unit ?? "batch");
+    setEditFermentationMinutes(
+      selectedRecipe.fermentation_minutes === null ? "" : String(selectedRecipe.fermentation_minutes)
+    );
+    setEditProofMinutes(selectedRecipe.proof_minutes === null ? "" : String(selectedRecipe.proof_minutes));
+    setEditBakeTempF(selectedRecipe.bake_temp_f === null ? "" : String(selectedRecipe.bake_temp_f));
+    setEditBakeMinutes(selectedRecipe.bake_minutes === null ? "" : String(selectedRecipe.bake_minutes));
+    setEditDescription(selectedRecipe.description ?? "");
+    setEditInstructions(selectedRecipe.instructions ?? "");
   }, [selectedRecipe?.id]);
 
   async function loadRecipesAndIngredients() {
@@ -307,6 +331,7 @@ export default function RecipesWorkbench() {
     setNewDietaryTags([]);
     setNewDescription("");
     setNewInstructions("");
+    setShowCreateForm(false);
     setSuccess("Recipe created.");
   }
 
@@ -401,7 +426,6 @@ export default function RecipesWorkbench() {
       await loadRecipeVersions(selectedRecipeId);
     }
     setSuccess("Version deleted.");
-    window.location.reload();
   }
 
   function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
@@ -430,14 +454,64 @@ export default function RecipesWorkbench() {
     setSuccess("Recipe tags updated.");
   }
 
-  async function addInlineIngredient(e: React.FormEvent) {
+  async function saveSelectedRecipeDetails() {
+    if (!selectedRecipeId) return;
+    setError(null);
+    setSuccess(null);
+
+    const parsedYieldQty = Number.parseFloat(editYieldQty);
+    if (!editTitle.trim()) {
+      setError("Recipe title is required.");
+      return;
+    }
+    if (!(parsedYieldQty > 0)) {
+      setError("Yield quantity must be greater than 0.");
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("recipes")
+      .update({
+        title: editTitle.trim(),
+        category: editCategory,
+        yield_qty: parsedYieldQty,
+        yield_unit: editYieldUnit.trim() || "batch",
+        fermentation_minutes: editFermentationMinutes ? Number(editFermentationMinutes) : null,
+        proof_minutes: editProofMinutes ? Number(editProofMinutes) : null,
+        bake_temp_f: editBakeTempF ? Number(editBakeTempF) : null,
+        bake_minutes: editBakeMinutes ? Number(editBakeMinutes) : null,
+        description: editDescription.trim() || null,
+        instructions: editInstructions.trim() || null,
+      })
+      .eq("id", selectedRecipeId);
+
+    if (updateError) {
+      setError(updateError.message);
+      return;
+    }
+
+    await loadRecipesAndIngredients();
+    setSuccess("Recipe details updated.");
+  }
+
+  async function addIngredientAndLine(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setSuccess(null);
 
+    if (!selectedRecipeId) {
+      setError("Select a recipe first.");
+      return;
+    }
+
     const name = inlineIngredientName.trim();
     if (name.length < 2) {
       setError("Ingredient name must be at least 2 characters.");
+      return;
+    }
+    const parsedQty = Number.parseFloat(inlineIngredientQty);
+    if (!(parsedQty > 0)) {
+      setError("New ingredient quantity must be greater than 0.");
       return;
     }
 
@@ -455,11 +529,27 @@ export default function RecipesWorkbench() {
     const created = data as Ingredient;
     const updated = [...ingredients, created].sort((a, b) => a.name.localeCompare(b.name));
     setIngredients(updated);
-    setLineIngredientId(created.id);
-    setLineUnit(created.unit_type);
+
+    const { error: lineError } = await supabase.from("recipe_lines").insert([
+      {
+        recipe_id: selectedRecipeId,
+        ingredient_id: created.id,
+        qty: parsedQty,
+        unit: inlineIngredientLineUnit || created.unit_type,
+      },
+    ]);
+
+    if (lineError) {
+      setError(lineError.message);
+      return;
+    }
+
+    await loadRecipeLines(selectedRecipeId);
     setInlineIngredientName("");
     setInlineIngredientUnit("g");
-    setSuccess("Ingredient added.");
+    setInlineIngredientQty("");
+    setInlineIngredientLineUnit("g");
+    setSuccess("Ingredient created and added to this recipe.");
   }
 
   async function addRecipeLine(e: React.FormEvent) {
@@ -475,7 +565,8 @@ export default function RecipesWorkbench() {
       setError("Select an ingredient.");
       return;
     }
-    if (!(lineQty > 0)) {
+    const parsedQty = Number.parseFloat(lineQtyInput);
+    if (!(parsedQty > 0)) {
       setError("Quantity must be greater than 0.");
       return;
     }
@@ -484,7 +575,7 @@ export default function RecipesWorkbench() {
       {
         recipe_id: selectedRecipeId,
         ingredient_id: lineIngredientId,
-        qty: lineQty,
+        qty: parsedQty,
         unit: lineUnit || null,
       },
     ]);
@@ -495,7 +586,7 @@ export default function RecipesWorkbench() {
     }
 
     await loadRecipeLines(selectedRecipeId);
-    setLineQty(1);
+    setLineQtyInput("");
     setSuccess("Ingredient line added.");
   }
 
@@ -553,7 +644,7 @@ export default function RecipesWorkbench() {
             <h2 style={{ margin: "0 0 10px" }}>Your Recipes</h2>
             <button
               type="button"
-              onClick={() => setShowCreateForm((prev) => !prev)}
+              onClick={() => setShowCreateForm(true)}
               style={{
                 padding: "8px 10px",
                 borderRadius: 8,
@@ -563,7 +654,7 @@ export default function RecipesWorkbench() {
                 marginBottom: 10,
               }}
             >
-              {showCreateForm ? "Hide New Recipe" : "Add New Recipe"}
+              New Recipe
             </button>
           </div>
           <div style={{ display: "grid", gap: 8, marginBottom: 12 }}>
@@ -707,225 +798,6 @@ export default function RecipesWorkbench() {
           )}
         </section>
 
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 14,
-            boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
-            padding: 20,
-          }}
-        >
-          <h2 style={{ margin: "0 0 10px" }}>New Recipe</h2>
-          <p style={{ margin: "0 0 10px", color: "#4b5563" }}>
-            Add a recipe with clear steps so anyone on your team can follow the process.
-          </p>
-          {showCreateForm ? (
-            <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
-            <input
-              placeholder="Recipe title (e.g. Country Sourdough)"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              required
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            />
-            <select
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value as RecipeCategory)}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            >
-              {RECIPE_CATEGORY_OPTIONS.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 140px", gap: 10 }}>
-              <input
-                type="number"
-                min={0.01}
-                step="0.01"
-                value={newYieldQty}
-                onChange={(e) => setNewYieldQty(Number(e.target.value))}
-                required
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <input
-                value={newYieldUnit}
-                onChange={(e) => setNewYieldUnit(e.target.value)}
-                placeholder="yield unit (e.g. loaf)"
-                required
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-              <input
-                type="number"
-                min={0}
-                step={1}
-                value={newFermentationMinutes}
-                onChange={(e) => setNewFermentationMinutes(e.target.value)}
-                placeholder="fermentation minutes"
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <input
-                type="number"
-                min={0}
-                step={1}
-                value={newProofMinutes}
-                onChange={(e) => setNewProofMinutes(e.target.value)}
-                placeholder="proof minutes"
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={newBakeTempF}
-                onChange={(e) => setNewBakeTempF(e.target.value)}
-                placeholder="bake temp (F)"
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-              <input
-                type="number"
-                min={0}
-                step={1}
-                value={newBakeMinutes}
-                onChange={(e) => setNewBakeMinutes(e.target.value)}
-                placeholder="bake minutes"
-                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-              />
-            </div>
-            <div style={{ display: "grid", gap: 8 }}>
-              <div style={{ color: "#6b7280", fontSize: 13 }}>Allergen tags</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {ALLERGEN_TAG_OPTIONS.map((tag) => {
-                  const active = newAllergenTags.includes(tag);
-                  return (
-                    <button
-                      key={`new-allergen-${tag}`}
-                      type="button"
-                      onClick={() => toggleTag(setNewAllergenTags, tag)}
-                      style={{
-                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
-                        background: active ? "#f3f4f6" : "#fff",
-                        borderRadius: 999,
-                        padding: "6px 8px",
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div style={{ display: "grid", gap: 8 }}>
-              <div style={{ color: "#6b7280", fontSize: 13 }}>Dietary tags</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {DIETARY_TAG_OPTIONS.map((tag) => {
-                  const active = newDietaryTags.includes(tag);
-                  return (
-                    <button
-                      key={`new-dietary-${tag}`}
-                      type="button"
-                      onClick={() => toggleTag(setNewDietaryTags, tag)}
-                      style={{
-                        border: active ? "1px solid #111827" : "1px solid #d1d5db",
-                        background: active ? "#f3f4f6" : "#fff",
-                        borderRadius: 999,
-                        padding: "6px 8px",
-                        cursor: "pointer",
-                        fontSize: 12,
-                      }}
-                    >
-                      {tag}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <textarea
-              placeholder="Description (optional): what is this recipe for?"
-              value={newDescription}
-              onChange={(e) => setNewDescription(e.target.value)}
-              rows={3}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            />
-            <textarea
-              placeholder="Instructions (recommended): write clear step-by-step baking directions."
-              value={newInstructions}
-              onChange={(e) => setNewInstructions(e.target.value)}
-              rows={6}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            />
-            <button
-              type="submit"
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "none",
-                background: "var(--hk-button)",
-                color: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Create recipe
-            </button>
-            </form>
-          ) : (
-            <p style={{ margin: 0, color: "#6b7280" }}>Click “Add New Recipe” above to open the form.</p>
-          )}
-        </section>
-
-        <section
-          style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
-            borderRadius: 14,
-            boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
-            padding: 20,
-          }}
-        >
-          <h2 style={{ margin: "0 0 10px" }}>Quick Add Ingredient</h2>
-          <form onSubmit={addInlineIngredient} style={{ display: "grid", gap: 10 }}>
-            <input
-              placeholder="Ingredient name"
-              value={inlineIngredientName}
-              onChange={(e) => setInlineIngredientName(e.target.value)}
-              required
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            />
-            <select
-              value={inlineIngredientUnit}
-              onChange={(e) => setInlineIngredientUnit(e.target.value as UnitOption)}
-              style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
-            >
-              {UNIT_OPTIONS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {unit}
-                </option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid #d1d5db",
-                background: "#fff",
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
-            >
-              Add ingredient
-            </button>
-          </form>
-        </section>
       </aside>
 
       <section
@@ -940,23 +812,121 @@ export default function RecipesWorkbench() {
         <h2 style={{ marginTop: 0 }}>{selectedRecipe?.title ?? "Select a recipe"}</h2>
         {selectedRecipe && (
           <>
-            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
-              Category: {selectedRecipe.category ?? "uncategorized"}
-            </p>
-            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
-              Yield: {selectedRecipe.yield_qty ?? 1} {selectedRecipe.yield_unit ?? "batch"}
-            </p>
-            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
-              Prep: ferment {selectedRecipe.fermentation_minutes ?? "-"} min, proof{" "}
-              {selectedRecipe.proof_minutes ?? "-"} min, bake {selectedRecipe.bake_temp_f ?? "-"} F for{" "}
-              {selectedRecipe.bake_minutes ?? "-"} min
-            </p>
-            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
-              Allergens: {(selectedRecipe.allergen_tags ?? []).join(", ") || "none"}
-            </p>
-            <p style={{ margin: "0 0 8px", color: "#6b7280" }}>
-              Dietary: {(selectedRecipe.dietary_tags ?? []).join(", ") || "none"}
-            </p>
+            <div
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 10,
+                padding: "12px",
+                marginBottom: 12,
+                background: "#fffdfa",
+                display: "grid",
+                gap: 10,
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 16 }}>Recipe Details</h3>
+              <input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="Recipe title"
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value as RecipeCategory)}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              >
+                {RECIPE_CATEGORY_OPTIONS.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 160px", gap: 10 }}>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={editYieldQty}
+                  onChange={(e) => setEditYieldQty(e.target.value)}
+                  placeholder="Yield quantity"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  value={editYieldUnit}
+                  onChange={(e) => setEditYieldUnit(e.target.value)}
+                  placeholder="Yield unit"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={editFermentationMinutes}
+                  onChange={(e) => setEditFermentationMinutes(e.target.value)}
+                  placeholder="Fermentation minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={editProofMinutes}
+                  onChange={(e) => setEditProofMinutes(e.target.value)}
+                  placeholder="Proof minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={editBakeTempF}
+                  onChange={(e) => setEditBakeTempF(e.target.value)}
+                  placeholder="Bake temp (F)"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={editBakeMinutes}
+                  onChange={(e) => setEditBakeMinutes(e.target.value)}
+                  placeholder="Bake minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <textarea
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Description"
+                rows={2}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <textarea
+                value={editInstructions}
+                onChange={(e) => setEditInstructions(e.target.value)}
+                placeholder="Instructions"
+                rows={4}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <button
+                type="button"
+                onClick={() => void saveSelectedRecipeDetails()}
+                style={{
+                  width: "fit-content",
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Save recipe details
+              </button>
+            </div>
             <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
               <div style={{ color: "#374151", fontWeight: 600 }}>Edit tags</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -1157,6 +1127,81 @@ export default function RecipesWorkbench() {
             <hr style={{ border: "none", borderTop: "1px solid #e5e7eb", margin: "16px 0" }} />
 
             <h3 style={{ marginTop: 0 }}>Add Ingredient Line</h3>
+            <form
+              onSubmit={addIngredientAndLine}
+              style={{
+                display: "grid",
+                gap: 10,
+                marginBottom: 12,
+                padding: "10px 12px",
+                border: "1px dashed #d1d5db",
+                borderRadius: 10,
+                background: "#fffdfa",
+              }}
+            >
+              <p style={{ margin: 0, color: "#6b7280", fontSize: 13 }}>
+                Need a brand-new ingredient? Add it here and it will be added to this recipe immediately.
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.4fr 1fr", gap: 10 }}>
+                <input
+                  placeholder="New ingredient name"
+                  value={inlineIngredientName}
+                  onChange={(e) => setInlineIngredientName(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <select
+                  value={inlineIngredientUnit}
+                  onChange={(e) => {
+                    const next = e.target.value as UnitOption;
+                    setInlineIngredientUnit(next);
+                    setInlineIngredientLineUnit(next);
+                  }}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                >
+                  {UNIT_OPTIONS.map((unit) => (
+                    <option key={`inline-base-${unit}`} value={unit}>
+                      canonical: {unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 180px", gap: 10 }}>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={inlineIngredientQty}
+                  onChange={(e) => setInlineIngredientQty(e.target.value)}
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <select
+                  value={inlineIngredientLineUnit}
+                  onChange={(e) => setInlineIngredientLineUnit(e.target.value as UnitOption)}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                >
+                  {UNIT_OPTIONS.map((unit) => (
+                    <option key={`inline-line-${unit}`} value={unit}>
+                      line unit: {unit}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="submit"
+                style={{
+                  width: "fit-content",
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  cursor: "pointer",
+                }}
+              >
+                Add ingredient + line
+              </button>
+            </form>
             <form onSubmit={addRecipeLine} style={{ display: "grid", gap: 10, marginBottom: 16 }}>
               <select
                 value={lineIngredientId}
@@ -1177,8 +1222,8 @@ export default function RecipesWorkbench() {
                   type="number"
                   min={0.01}
                   step="0.01"
-                  value={lineQty}
-                  onChange={(e) => setLineQty(Number(e.target.value))}
+                  value={lineQtyInput}
+                  onChange={(e) => setLineQtyInput(e.target.value)}
                   required
                   style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
                 />
@@ -1296,6 +1341,164 @@ export default function RecipesWorkbench() {
           </>
         )}
       </section>
+
+      {showCreateForm && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 60,
+            background: "rgba(17, 24, 39, 0.35)",
+            display: "grid",
+            placeItems: "center",
+            padding: 16,
+          }}
+        >
+          <section
+            style={{
+              width: "100%",
+              maxWidth: 760,
+              maxHeight: "90vh",
+              overflowY: "auto",
+              background: "#fff",
+              border: "1px solid #d1d5db",
+              borderRadius: 14,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+              padding: 18,
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+              <h2 style={{ margin: 0 }}>New Recipe</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 999,
+                  border: "1px solid #d1d5db",
+                  background: "#fff",
+                  fontSize: 20,
+                  lineHeight: "20px",
+                  cursor: "pointer",
+                }}
+                aria-label="Close new recipe form"
+              >
+                ×
+              </button>
+            </div>
+            <p style={{ margin: "8px 0 12px", color: "#4b5563" }}>
+              Add a recipe with clear steps so anyone on your team can follow the process.
+            </p>
+            <form onSubmit={createRecipe} style={{ display: "grid", gap: 10 }}>
+              <input
+                placeholder="Recipe title (e.g. Country Sourdough)"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                required
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value as RecipeCategory)}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              >
+                {RECIPE_CATEGORY_OPTIONS.map((category) => (
+                  <option key={`modal-${category}`} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 140px", gap: 10 }}>
+                <input
+                  type="number"
+                  min={0.01}
+                  step="0.01"
+                  value={newYieldQty}
+                  onChange={(e) => setNewYieldQty(Number(e.target.value))}
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  value={newYieldUnit}
+                  onChange={(e) => setNewYieldUnit(e.target.value)}
+                  placeholder="yield unit (e.g. loaf)"
+                  required
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={newFermentationMinutes}
+                  onChange={(e) => setNewFermentationMinutes(e.target.value)}
+                  placeholder="fermentation minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={newProofMinutes}
+                  onChange={(e) => setNewProofMinutes(e.target.value)}
+                  placeholder="proof minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={newBakeTempF}
+                  onChange={(e) => setNewBakeTempF(e.target.value)}
+                  placeholder="bake temp (F)"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={newBakeMinutes}
+                  onChange={(e) => setNewBakeMinutes(e.target.value)}
+                  placeholder="bake minutes"
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+                />
+              </div>
+              <textarea
+                placeholder="Description (optional): what is this recipe for?"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                rows={3}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <textarea
+                placeholder="Instructions (recommended): write clear step-by-step baking directions."
+                value={newInstructions}
+                onChange={(e) => setNewInstructions(e.target.value)}
+                rows={6}
+                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
+              />
+              <button
+                type="submit"
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: "var(--hk-button)",
+                  color: "#fff",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Create recipe
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
 
       {(error || success) && (
         <div style={{ gridColumn: "1 / -1" }}>
