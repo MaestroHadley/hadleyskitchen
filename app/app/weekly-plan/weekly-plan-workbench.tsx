@@ -15,6 +15,7 @@ type WeeklyPlan = {
 type Recipe = {
   id: string;
   title: string;
+  category: string | null;
   yield_qty: number | null;
   yield_unit: string | null;
   archived_at: string | null;
@@ -103,7 +104,7 @@ export default function WeeklyPlanWorkbench() {
       supabase.from("weekly_plans").select("id,title,week_start,week_end,archived_at").order("week_start", {
         ascending: false,
       }),
-      supabase.from("recipes").select("id,title,yield_qty,yield_unit,archived_at").order("title", {
+      supabase.from("recipes").select("id,title,category,yield_qty,yield_unit,archived_at").order("title", {
         ascending: true,
       }),
     ]);
@@ -405,11 +406,43 @@ export default function WeeklyPlanWorkbench() {
   const activePlans = plans.filter((plan) => !plan.archived_at);
   const archivedPlans = plans.filter((plan) => !!plan.archived_at);
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) ?? null;
+  const recipesByCategory = recipes.reduce<Record<string, Recipe[]>>((acc, recipe) => {
+    const key = recipe.category?.trim() || "uncategorized";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(recipe);
+    return acc;
+  }, {});
 
   function exportTotalsCsv() {
     if (!selectedPlan || totals.length === 0) return;
 
-    const header = [
+    const itemsHeader = [
+      "plan_title",
+      "week_start",
+      "week_end",
+      "recipe_category",
+      "recipe_name",
+      "ordered_qty_eaches",
+      "recipe_yield_qty",
+      "recipe_yield_unit",
+    ];
+
+    const itemRows = planItems.map((item) => {
+      const recipe = item.recipes;
+      const recipeMeta = recipes.find((r) => r.id === item.recipe_id);
+      return [
+        selectedPlan.title,
+        selectedPlan.week_start,
+        selectedPlan.week_end,
+        recipeMeta?.category ?? "",
+        recipe?.title ?? "Unknown recipe",
+        item.qty,
+        recipe?.yield_qty ?? "",
+        recipe?.yield_unit ?? "",
+      ];
+    });
+
+    const totalsHeader = [
       "plan_title",
       "week_start",
       "week_end",
@@ -419,7 +452,7 @@ export default function WeeklyPlanWorkbench() {
       "missing_line_count",
     ];
 
-    const rows = totals.map((total) => [
+    const totalRows = totals.map((total) => [
       selectedPlan.title,
       selectedPlan.week_start,
       selectedPlan.week_end,
@@ -429,7 +462,17 @@ export default function WeeklyPlanWorkbench() {
       total.missing_line_count,
     ]);
 
-    const csv = [header, ...rows].map((row) => row.map(escapeCsv).join(",")).join("\n");
+    const csv = [
+      ["Planned Items"],
+      itemsHeader,
+      ...itemRows,
+      [],
+      ["Aggregate Ingredient Totals"],
+      totalsHeader,
+      ...totalRows,
+    ]
+      .map((row) => row.map(escapeCsv).join(","))
+      .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -625,11 +668,20 @@ export default function WeeklyPlanWorkbench() {
                 style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #d1d5db" }}
               >
                 <option value="">Select recipe</option>
-                {recipes.map((recipe) => (
-                  <option key={recipe.id} value={recipe.id}>
-                    {recipe.title} ({recipe.yield_qty ?? 1} {recipe.yield_unit ?? "batch"})
-                  </option>
-                ))}
+                {Object.entries(recipesByCategory)
+                  .sort((a, b) => a[0].localeCompare(b[0]))
+                  .map(([category, categoryRecipes]) => (
+                    <optgroup key={category} label={category}>
+                      {categoryRecipes
+                        .slice()
+                        .sort((a, b) => a.title.localeCompare(b.title))
+                        .map((recipe) => (
+                          <option key={recipe.id} value={recipe.id}>
+                            {recipe.title} ({recipe.yield_qty ?? 1} {recipe.yield_unit ?? "batch"})
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
               </select>
 
               <label style={{ display: "grid", gap: 6 }}>
