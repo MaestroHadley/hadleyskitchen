@@ -101,6 +101,7 @@ export default function RecipesWorkbench() {
   const [editDescription, setEditDescription] = useState("");
   const [editInstructions, setEditInstructions] = useState("");
   const [isSavingRecipeDetails, setIsSavingRecipeDetails] = useState(false);
+  const [isDuplicatingRecipe, setIsDuplicatingRecipe] = useState(false);
   const [recipeSaveNotice, setRecipeSaveNotice] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
@@ -332,6 +333,79 @@ export default function RecipesWorkbench() {
     }
 
     setSuccess("Recipe permanently deleted.");
+  }
+
+  async function duplicateSelectedRecipe() {
+    if (!selectedRecipe) return;
+    setIsDuplicatingRecipe(true);
+    setError(null);
+    setSuccess(null);
+
+    const baseTitle = selectedRecipe.title?.trim() || "Untitled recipe";
+    const existingTitles = new Set(recipes.map((recipe) => (recipe.title || "").trim().toLowerCase()));
+    let nextTitle = `${baseTitle} (Copy)`;
+    let suffix = 2;
+    while (existingTitles.has(nextTitle.toLowerCase())) {
+      nextTitle = `${baseTitle} (Copy ${suffix})`;
+      suffix += 1;
+    }
+
+    const { data: createdData, error: createError } = await supabase
+      .from("recipes")
+      .insert([
+        {
+          name: nextTitle,
+          title: nextTitle,
+          category: selectedRecipe.category ?? "bread",
+          yield_qty: selectedRecipe.yield_qty ?? 1,
+          yield_unit: selectedRecipe.yield_unit ?? "batch",
+          fermentation_minutes: selectedRecipe.fermentation_minutes,
+          proof_minutes: selectedRecipe.proof_minutes,
+          bake_temp_f: selectedRecipe.bake_temp_f,
+          bake_minutes: selectedRecipe.bake_minutes,
+          description: selectedRecipe.description,
+          instructions: selectedRecipe.instructions,
+          allergen_tags: selectedRecipe.allergen_tags ?? [],
+          dietary_tags: selectedRecipe.dietary_tags ?? [],
+          archived_at: null,
+        },
+      ])
+      .select(
+        "id,title,category,yield_qty,yield_unit,description,instructions,archived_at,fermentation_minutes,proof_minutes,bake_temp_f,bake_minutes,allergen_tags,dietary_tags"
+      )
+      .single();
+
+    if (createError) {
+      setIsDuplicatingRecipe(false);
+      setError(createError.message);
+      return;
+    }
+
+    const createdRecipe = createdData as Recipe;
+
+    if (recipeLines.length > 0) {
+      const duplicatedLines = recipeLines.map((line) => ({
+        recipe_id: createdRecipe.id,
+        ingredient_id: line.ingredient_id,
+        qty: line.qty,
+        unit: line.unit ?? line.ingredients?.unit_type ?? "g",
+      }));
+
+      const { error: lineInsertError } = await supabase.from("recipe_lines").insert(duplicatedLines);
+      if (lineInsertError) {
+        setIsDuplicatingRecipe(false);
+        setError(`Recipe copied but lines failed to copy: ${lineInsertError.message}`);
+        await loadRecipesAndIngredients();
+        setSelectedRecipeId(createdRecipe.id);
+        return;
+      }
+    }
+
+    await loadRecipesAndIngredients();
+    setSelectedRecipeId(createdRecipe.id);
+    await loadRecipeLines(createdRecipe.id);
+    setIsDuplicatingRecipe(false);
+    setSuccess("Recipe duplicated. Rename and adjust for your variation.");
   }
 
   function toggleTag<T extends string>(setFn: Dispatch<SetStateAction<T[]>>, tag: T) {
@@ -894,6 +968,21 @@ export default function RecipesWorkbench() {
                   }}
                 >
                   {isSavingRecipeDetails ? "Saving..." : "Save recipe details"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void duplicateSelectedRecipe()}
+                  disabled={isDuplicatingRecipe}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    background: "#fff",
+                    cursor: isDuplicatingRecipe ? "default" : "pointer",
+                    opacity: isDuplicatingRecipe ? 0.7 : 1,
+                  }}
+                >
+                  {isDuplicatingRecipe ? "Duplicating..." : "Duplicate recipe"}
                 </button>
                 <button
                   type="button"
