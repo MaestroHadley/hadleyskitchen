@@ -264,11 +264,16 @@ export default function WeeklyPlanWorkbench() {
 
     const aggregateInput = items.flatMap((item) => {
       const recipeLines = linesByRecipe.get(item.recipe_id) ?? [];
+      const recipeYieldQty =
+        item.recipes?.yield_qty && item.recipes.yield_qty > 0
+          ? Number(item.recipes.yield_qty)
+          : Number(recipes.find((recipe) => recipe.id === item.recipe_id)?.yield_qty ?? 1);
+      const multiplier = Number(item.qty) / (recipeYieldQty > 0 ? recipeYieldQty : 1);
       return recipeLines.map((line) => ({
         ingredient_id: line.ingredient_id,
         qty: Number(line.qty),
         unit: line.unit,
-        multiplier: Number(item.qty),
+        multiplier,
       }));
     });
 
@@ -627,7 +632,9 @@ export default function WeeklyPlanWorkbench() {
                 ))}
               </select>
 
-              <input
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#4b5563" }}>Order quantity (eaches)</span>
+                <input
                 type="number"
                 min={0.01}
                 step="0.01"
@@ -640,7 +647,8 @@ export default function WeeklyPlanWorkbench() {
                   borderRadius: 10,
                   border: "1px solid #d1d5db",
                 }}
-              />
+                />
+              </label>
 
               <button
                 type="submit"
@@ -680,7 +688,7 @@ export default function WeeklyPlanWorkbench() {
                     <div>
                       <strong>{item.recipes?.title ?? "Unknown recipe"}</strong>
                       <div style={{ color: "#4b5563" }}>
-                        {item.qty} batch{item.qty === 1 ? "" : "es"}
+                        {item.qty} each{item.qty === 1 ? "" : "es"}
                       </div>
                     </div>
                     <button

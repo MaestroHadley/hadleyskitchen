@@ -14,6 +14,8 @@ type RecipeRow = {
   title: string | null;
   name?: string | null;
   category: string | null;
+  yield_qty?: number | null;
+  yield_unit?: string | null;
 };
 
 type RecipeLineRow = {
@@ -88,7 +90,7 @@ export default async function AppHome() {
 
       const { data: recipesData, error: recipesError } = await supabase
         .from("recipes")
-        .select("id,title,name,category")
+        .select("id,title,name,category,yield_qty,yield_unit")
         .in("id", recipeIds);
       if (!recipesError) {
         const recipes = (recipesData ?? []) as RecipeRow[];
@@ -124,7 +126,10 @@ export default async function AppHome() {
         }
 
         const aggregateInput = planItems.flatMap((item) => {
-          const multiplier = Number(item.qty ?? item.ordered_qty ?? item.quantity ?? 0);
+          const orderedQty = Number(item.qty ?? item.ordered_qty ?? item.quantity ?? 0);
+          const recipeYieldQty =
+            Number(recipesData?.find((recipe) => recipe.id === item.recipe_id)?.yield_qty ?? 1) || 1;
+          const multiplier = orderedQty / (recipeYieldQty > 0 ? recipeYieldQty : 1);
           const recipeLines = linesByRecipe.get(item.recipe_id) ?? [];
           return recipeLines.map((line) => ({
             ingredient_id: line.ingredient_id,
@@ -216,7 +221,7 @@ export default async function AppHome() {
         )}
         {totalsError && <p style={{ margin: 0, color: "#b91c1c" }}>{totalsError}</p>}
         {!totalsError && latestPlan && totals.length === 0 && (
-          <p style={{ margin: 0, color: "#6b7280" }}>No totals yet. Add recipe batches to the plan.</p>
+          <p style={{ margin: 0, color: "#6b7280" }}>No totals yet. Add recipe quantities to the plan.</p>
         )}
         {!totalsError && totals.length > 0 && (
           <div style={{ display: "grid", gap: 8 }}>
