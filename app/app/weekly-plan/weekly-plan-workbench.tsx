@@ -488,13 +488,23 @@ export default function WeeklyPlanWorkbench() {
   return (
     <div
       style={{
-        display: "grid",
-        gridTemplateColumns: isMobile ? "1fr" : "minmax(280px, 360px) minmax(0, 1fr)",
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: "flex-start",
+        flexWrap: "wrap",
         gap: 18,
         paddingBottom: isMobile ? 88 : 0,
       }}
     >
-      <aside style={{ display: "grid", gap: 18, order: isMobile ? 1 : 0 }}>
+      <aside
+        style={{
+          display: "grid",
+          gap: 18,
+          width: isMobile ? "100%" : 340,
+          flex: isMobile ? "unset" : "0 0 340px",
+          order: isMobile ? 1 : 0,
+        }}
+      >
         <section
           style={{
             background: "#ffffff",
@@ -632,6 +642,9 @@ export default function WeeklyPlanWorkbench() {
           borderRadius: 14,
           boxShadow: "0 14px 32px rgba(17, 24, 39, 0.06)",
           padding: 20,
+          flex: 1,
+          minWidth: 0,
+          width: "100%",
           order: isMobile ? 0 : 1,
         }}
       >
@@ -810,7 +823,7 @@ export default function WeeklyPlanWorkbench() {
       </section>
 
       {(error || success) && (
-        <div style={{ gridColumn: "1 / -1" }}>
+        <div style={{ width: "100%" }}>
           {error && <p style={{ margin: 0, color: "#b91c1c" }}>{error}</p>}
           {success && <p style={{ margin: 0, color: "#065f46" }}>{success}</p>}
         </div>
