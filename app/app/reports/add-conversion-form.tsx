@@ -61,19 +61,24 @@ export default function AddConversionForm({ ingredients, missing }: AddConversio
       return;
     }
 
-    const { error: insertError } = await supabase.from("ingredient_unit_conversions").insert([
+    const { error: upsertError } = await supabase.from("ingredient_unit_conversions").upsert(
+      [
+        {
+          ingredient_id: ingredientId,
+          from_unit: fromUnit,
+          to_unit: toUnit,
+          factor,
+        },
+      ],
       {
-        ingredient_id: ingredientId,
-        from_unit: fromUnit,
-        to_unit: toUnit,
-        factor,
+        onConflict: "ingredient_id,from_unit,to_unit",
       },
-    ]);
+    );
 
     setSaving(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (upsertError) {
+      setError(upsertError.message);
       return;
     }
 
@@ -172,6 +177,9 @@ export default function AddConversionForm({ ingredients, missing }: AddConversio
             required
           />
         </div>
+        <p style={{ margin: 0, color: "#6b7280", fontSize: 12 }}>
+          Factor means: <strong>1 {fromUnit}</strong> equals <strong>{factor || 0}</strong> <strong>{toUnit}</strong>.
+        </p>
 
         {error && <p style={{ margin: 0, color: "#b91c1c" }}>{error}</p>}
         {success && <p style={{ margin: 0, color: "#065f46" }}>{success}</p>}
