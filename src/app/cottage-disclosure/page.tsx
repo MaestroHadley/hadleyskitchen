@@ -15,6 +15,7 @@ export default function CottageDisclosurePage() {
             <p className="eyebrow eyebrow--dark">Disclosure</p>
             <h1>{siteContent.disclosure.title}</h1>
           </div>
+          </div>
       </section>
 
       <section className="page-section">
