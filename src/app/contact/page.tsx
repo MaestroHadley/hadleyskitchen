@@ -46,7 +46,7 @@ export default function ContactPage() {
                 Order inquiry
               </a>
               <a
-                className="button button--ghost"
+                className="button button--secondary"
                 href={`mailto:${siteContent.site.email}`}
               >
                 Email Hadley&apos;s Kitchen
