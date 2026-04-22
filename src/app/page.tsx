@@ -5,6 +5,8 @@ import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Home",
+  description:
+    "Hadley's Kitchen is a cottage bakery offering sourdough bread, pastries, and premium bagels with warmth, hospitality, and community at the center.",
 };
 
 export default function HomePage() {
@@ -60,9 +62,9 @@ export default function HomePage() {
           </div>
 
           <p className="section-copy section-copy--dark">
-            Hadley&apos;s Kitchen brings together sourdough craft, approachable hospitality,
-            and a cottage bakery spirit that feels personal. The goal is simple: make food
-            that feels generous, grounded, and worth sharing.
+            Hadley&apos;s Kitchen brings together sourdough,
+            approachable hospitality, and a cottage bakery spirit that feels personal.
+            The goal is simple: make food that feels generous, grounded, and worth sharing.
           </p>
         </div>
       </section>
