@@ -10,12 +10,19 @@ const bodyFont = Libre_Baskerville({
   weight: ["400", "700"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
+function getMetadataBase() {
+  const rawUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
-      process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-      "http://localhost:3000",
-  ),
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    "http://localhost:3000";
+
+  const normalizedUrl = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+
+  return new URL(normalizedUrl);
+}
+
+export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: {
     default: siteContent.site.name,
     template: `%s | ${siteContent.site.name}`,
