@@ -15,14 +15,7 @@ export default function CottageDisclosurePage() {
             <p className="eyebrow eyebrow--dark">Disclosure</p>
             <h1>{siteContent.disclosure.title}</h1>
           </div>
-
-          <div className="page-hero__panel">
-            <p>
-              This page keeps the required cottage bakery notice accessible from the site
-              footer and available for all product and inquiry pages.
-            </p>
           </div>
-        </div>
       </section>
 
       <section className="page-section">

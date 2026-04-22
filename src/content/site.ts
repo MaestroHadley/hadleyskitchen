@@ -35,14 +35,14 @@ export const siteContent = {
         "Naturally leavened loaves with a tender crumb, balanced tang, and crust built for the center of the table.",
     },
     {
-      title: "Baked Goods",
+      title: "Pastries",
       description:
-        "Seasonal sweets and bakery staples made to feel comforting, shareable, and worth coming back for.",
+        "Seasonal sweets and bakery staples made to feel comforting, shareable, and worth coming back for that contain the same sourdough starter.",
     },
     {
-      title: "Small-Batch Orders",
+      title: "Premium Bagels",
       description:
-        "Flexible pickup-friendly ordering for customers looking for homemade bread and baked goods with personality.",
+        "Extra large and flavorful bagels that have become a community favorite.",
     },
   ],
   order: {
