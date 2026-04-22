@@ -40,7 +40,7 @@ export default function HomePage() {
 
             <div className="hero__mark">
               <Image
-                src="/images/hk-logo.png"
+                src="/images/HK-logo-orange.png"
                 alt="Hadley's Kitchen logo."
                 width={1200}
                 height={1200}
