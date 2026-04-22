@@ -55,7 +55,7 @@ export default function HomePage() {
           <div>
             <p className="eyebrow eyebrow--dark">Why people come back</p>
             <h2 className="section-title section-title--dark">
-              Handmade bread and bakes with warmth at the center.
+              Handmade bread and bakes with warmth and people at the center.
             </h2>
           </div>
 
@@ -71,7 +71,7 @@ export default function HomePage() {
         <div className="container">
           <div className="section-heading">
             <p className="eyebrow">Featured Offerings</p>
-            <h2 className="section-title">A small-batch bakery built around comfort.</h2>
+            <h2 className="section-title">A small-batch cottage bakery built to feed the community.</h2>
           </div>
 
           <div className="card-grid">
