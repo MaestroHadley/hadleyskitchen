@@ -1,12 +1,16 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-  "http://localhost:3000";
+function getSiteUrl() {
+  const rawUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
+    "http://localhost:3000";
+
+  return rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+}
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = new URL(siteUrl);
+  const baseUrl = new URL(getSiteUrl());
   const routes = ["/", "/about", "/order", "/contact", "/cottage-disclosure"];
 
   return routes.map((route) => ({
