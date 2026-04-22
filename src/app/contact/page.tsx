@@ -3,6 +3,8 @@ import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Contact",
+  description:
+    "Contact Hadley's Kitchen for orders, availability, custom requests, and bakery questions by email or through the online ordering page.",
 };
 
 export default function ContactPage() {

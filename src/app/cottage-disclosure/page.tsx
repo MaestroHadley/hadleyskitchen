@@ -4,6 +4,8 @@ import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Cottage Disclosure",
+  description:
+    "Read the cottage food disclosure information for Hadley's Kitchen, including storage guidance and household pet disclosure.",
 };
 
 export default function CottageDisclosurePage() {

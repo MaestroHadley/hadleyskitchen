@@ -4,6 +4,8 @@ import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "About",
+  description:
+    "Learn the story behind Hadley's Kitchen, a cottage bakery built around sourdough, homemade baked goods, and community-rooted hospitality.",
 };
 
 export default function AboutPage() {
@@ -18,8 +20,9 @@ export default function AboutPage() {
 
           <div className="page-hero__panel">
             <p>
-              Hadley&apos;s Kitchen is a bakery story shaped by bread, family, and the belief
-              that homemade food can still feel elegant, intentional, and deeply welcoming.
+              Hadley&apos;s Kitchen is a bakery story shaped by bread, family, and the
+              belief that homemade food can still feel elegant, intentional, and deeply
+              welcoming.
             </p>
           </div>
         </div>

@@ -16,7 +16,7 @@ export const siteContent = {
     eyebrow: "Cottage Bakery",
     headline: "Warmth for the soul, and a home for the heart.",
     description:
-      "Hadley's Kitchen is a welcoming bakery focused on sourdough bread, baked goods, and the kind of food that brings people back to the table.",
+      "Hadley's Kitchen is a welcoming bakery focused on sourdough bread, baked goods, and the kind of food that brings people back to the table. All our products are made with organic flour, natural ingredients and flavors.",
     primaryCta: "Place an Order",
     secondaryCta: "Read Our Story",
     badge: "Freshly baked",

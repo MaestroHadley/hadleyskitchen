@@ -3,6 +3,8 @@ import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Order",
+  description:
+    "Order sourdough bread, pastries, and other baked goods from Hadley's Kitchen online, or reach out for custom bakery requests.",
 };
 
 export default function OrderPage() {
