@@ -9,7 +9,7 @@ export const siteContent = {
   navItems: [
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
-    { href: "/order", label: "Order" },
+    { href: "/order", label: "Order and Schedule" },
     { href: "/contact", label: "Contact" },
   ],
   hero: {
