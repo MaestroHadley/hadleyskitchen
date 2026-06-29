@@ -29,9 +29,11 @@ export default function OrderPage() {
             </a>
             <a
               className="button button--secondary order-page__customButton"
-              href={`mailto:${siteContent.site.email}?subject=Custom%20Order%20Inquiry`}
+              href="https://app.simply-bread.co/hadleyskitchen/signup"
+              target="_blank"
+              rel="noreferrer"
             >
-              Custom orders
+              Get Updates
             </a>
           </div>
         </div>
