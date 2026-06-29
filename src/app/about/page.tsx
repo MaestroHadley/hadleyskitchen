@@ -52,6 +52,27 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <section className="page-section">
+        <div className="container">
+          <div className="page-section__panel page-section__stack">
+            <h2>{siteContent.about.origin.title}</h2>
+            {siteContent.about.origin.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+            <div className="button-row">
+              <a
+                className="button button--primary"
+                href={siteContent.about.origin.linkUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {siteContent.about.origin.linkText}
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
