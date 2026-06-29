@@ -27,6 +27,16 @@ export const siteContent = {
       "Hadley's Kitchen is comprised of baker, Nicholas Hadley, husband and professional taste-tester/ideas man, Tony Hadley, Human Resources Officer (dog) Erza, and Compliance Officer (cat), Mira Jane. Together they bring Hadley's Kitchen to life.",
       "Nicholas has been in the kitchen since he was a young boy, and has always enjoyed cooking and pushing himself to new limits. Having taught and worked in Europe, he gained a keen sense on what food should be and how it should be available. One of the core tenants of Hadley's Kitchen is community. Food should be affordable, delicious, and sustainable. Here at Hadley's Kitchen that is what we strive for every day, in every loaf, and every baked good.",
     ],
+    origin: {
+      title: "How was Hadley's Kitchen born?",
+      paragraphs: [
+        "Hadley's Kitchen began as a simple Instagram account in 2016: a place to share family recipes, kitchen experiments, and the food I loved making for the people closest to me. Years later, after rediscovering baking through sourdough, community care, and our neighborhood Free Little Pantry, it grew into something much bigger: a way to feed people, build connection, and make good bread feel accessible.",
+        "From that first rainy front-yard pop-up to today, Hadley's Kitchen has been rooted in the same belief: food should nourish, comfort, and bring people together.",
+      ],
+      linkText: "Read the full story of how Hadley's Kitchen began.",
+      linkUrl:
+        "https://open.substack.com/pub/hadleyskitchen/p/how-was-hadleys-kitchen-born?r=8f9sjt&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true",
+    },
   },
   offerings: [
     {
