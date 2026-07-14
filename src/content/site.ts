@@ -2,7 +2,7 @@ export const siteContent = {
   site: {
     name: "Hadley's Kitchen",
     description:
-      "A cottage bakery centered on sourdough bread, baked goods, and community-rooted hospitality.",
+      "A Eugene cottage bakery built around sourdough bread, generous bakes, food access, and community-rooted hospitality.",
     orderUrl: "https://app.simply-bread.co/hadleyskitchen/",
     email: "HadleysKitchen@protonmail.com",
   },
@@ -16,33 +16,56 @@ export const siteContent = {
     eyebrow: "Cottage Bakery",
     headline: "Warmth for the soul, and a home for the heart.",
     description:
-      "Hadley's Kitchen is a welcoming bakery focused on sourdough bread, baked goods, and the kind of food that brings people back to the table. All our products are made with organic flour, natural ingredients and flavors.",
+      "Hadley's Kitchen is a welcoming cottage bakery rooted in sourdough, organic flour, generous portions, and the belief that good bread should feel nourishing, joyful, and within reach.",
     primaryCta: "Place an Order",
     secondaryCta: "Read Our Story",
     badge: "Freshly baked",
   },
   about: {
-    lead: "What is Hadley's Kitchen?",
+    lead: "A bakery story shaped by teaching, bread, and community care.",
     paragraphs: [
-      "Hadley's Kitchen is comprised of baker, Nicholas Hadley, husband and professional taste-tester/ideas man, Tony Hadley, Human Resources Officer (dog) Erza, and Compliance Officer (cat), Mira Jane. Together they bring Hadley's Kitchen to life.",
-      "Nicholas has been in the kitchen since he was a young boy, and has always enjoyed cooking and pushing himself to new limits. Having taught and worked in Europe, he gained a keen sense on what food should be and how it should be available. One of the core tenants of Hadley's Kitchen is community. Food should be affordable, delicious, and sustainable. Here at Hadley's Kitchen that is what we strive for every day, in every loaf, and every baked good.",
+      "Hadley's Kitchen is led by Nicholas Hadley, with Tony Hadley as husband, professional taste-tester, and ideas man; Erza as Human Resources Officer; and Mira Jane as Compliance Officer. Together, they make the kitchen feel like a family project with a bigger purpose.",
+      "The roots go back to 2016, when Hadley's Kitchen began as an Instagram account for family recipes, cooking techniques, and the meals Nicholas made for the people he loved. At the same time, he was teaching Spanish Immersion in a middle school classroom, so food became both a creative outlet and another way to care for a community.",
+      "After a winding path through teaching, tech, the kitchen pull of Fave Chef 2020, and years of cooking for home, Nicholas found sourdough in 2025. What started as a way to bake healthier, more affordable food became something larger when a Free Little Pantry arrived in front of the house and began emptying every day.",
+    ],
+    storyNotes: [
+      {
+        title: "Born online in 2016",
+        description:
+          "Hadley's Kitchen started as a place to share family recipes and kitchen experiments before it became a cottage bakery.",
+      },
+      {
+        title: "Built around access",
+        description:
+          "The Free Little Pantry remains part of the kitchen's heartbeat, with bread, weekly bakes, and perfectly good mis-bakes going back into the neighborhood.",
+      },
+      {
+        title: "Generous on purpose",
+        description:
+          "Large loaves, organic flour, and approachable staples reflect a belief that bread belongs at the center of community life.",
+      },
+      {
+        title: "Welcoming by design",
+        description:
+          "As a gay-owned cottage bakery, Hadley's Kitchen is built to be a place where people feel welcomed as they are.",
+      },
     ],
     origin: {
       title: "How was Hadley's Kitchen born?",
       paragraphs: [
-        "Hadley's Kitchen began as a simple Instagram account in 2016: a place to share family recipes, kitchen experiments, and the food I loved making for the people closest to me. Years later, after rediscovering baking through sourdough, community care, and our neighborhood Free Little Pantry, it grew into something much bigger: a way to feed people, build connection, and make good bread feel accessible.",
-        "From that first rainy front-yard pop-up to today, Hadley's Kitchen has been rooted in the same belief: food should nourish, comfort, and bring people together.",
+        "A sourdough starter from friend Ashlea Simons of Be.Loved.Bread helped Nicholas move from lifelong cook to baker. Soon after, a Free Little Pantry from Burrito Brigade turned that personal baking practice into daily neighborhood care.",
+        "The first public sale happened in late November 2025 under a borrowed pop-up tent in pouring rain. Nicholas opened with sweets, sold out in two hours, and heard the question that changed the next chapter: where was the bread?",
+        "Today, Hadley's Kitchen is built around abundance, access, and care. The plain rustic loaf sits at the center, while pastries, cookies, cinnamon rolls, scones, and loaded loaves help make the work sustainable.",
       ],
-      linkText: "Read the full story of how Hadley's Kitchen began.",
-      linkUrl:
-        "https://open.substack.com/pub/hadleyskitchen/p/how-was-hadleys-kitchen-born?r=8f9sjt&utm_campaign=post&utm_medium=web&showWelcomeOnShare=true",
+      linkText: "Read Nicholas's full Substack story.",
+      linkUrl: "https://hadleyskitchen.substack.com/p/how-was-hadleys-kitchen-born",
     },
   },
   offerings: [
     {
       title: "Sourdough Bread",
       description:
-        "Naturally leavened loaves with a tender crumb, balanced tang, and crust built for the center of the table.",
+        "Naturally leavened, organic-flour loaves made generously, with the plain rustic sourdough kept at the heart of the kitchen.",
     },
     {
       title: "Pastries",

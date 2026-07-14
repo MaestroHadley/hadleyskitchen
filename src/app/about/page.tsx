@@ -5,7 +5,7 @@ import { siteContent } from "@/content/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Learn the story behind Hadley's Kitchen, a cottage bakery built around sourdough, homemade baked goods, and community-rooted hospitality.",
+    "Learn how Hadley's Kitchen grew from family recipes and teaching into a Eugene cottage bakery built around sourdough, food access, and community care.",
 };
 
 export default function AboutPage() {
@@ -20,9 +20,9 @@ export default function AboutPage() {
 
           <div className="page-hero__panel">
             <p>
-              Hadley&apos;s Kitchen is a bakery story shaped by bread, family, and the
-              belief that homemade food can still feel elegant, intentional, and deeply
-              welcoming.
+              From enthusiast to teacher, to tech, to baker: Hadley&apos;s Kitchen grew
+              from family recipes into a cottage bakery centered on nourishment,
+              access, and welcome.
             </p>
           </div>
         </div>
@@ -54,6 +54,17 @@ export default function AboutPage() {
       </section>
 
       <section className="page-section">
+        <div className="container story-note-grid">
+          {siteContent.about.storyNotes.map((note) => (
+            <article className="story-note" key={note.title}>
+              <h2>{note.title}</h2>
+              <p>{note.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-section page-section--tight">
         <div className="container">
           <div className="page-section__panel page-section__stack">
             <h2>{siteContent.about.origin.title}</h2>

@@ -6,7 +6,7 @@ import { siteContent } from "@/content/site";
 export const metadata: Metadata = {
   title: "Home",
   description:
-    "Hadley's Kitchen is a cottage bakery offering sourdough bread, pastries, and premium bagels with warmth, hospitality, and community at the center.",
+    "Hadley's Kitchen is a Eugene cottage bakery offering sourdough bread, generous bakes, and community-rooted hospitality built around nourishment and access.",
 };
 
 export default function HomePage() {
@@ -31,6 +31,12 @@ export default function HomePage() {
             <h1>{siteContent.hero.headline}</h1>
             <p className="hero__description">{siteContent.hero.description}</p>
 
+            <div className="proof-strip" aria-label="Bakery highlights">
+              <span>Organic flour</span>
+              <span>Naturally leavened</span>
+              <span>Eugene, OR</span>
+            </div>
+
             <div className="button-row">
               <a className="button button--primary" href={siteContent.site.orderUrl}>
                 {siteContent.hero.primaryCta}
@@ -42,8 +48,8 @@ export default function HomePage() {
 
             <div className="hero__mark">
               <Image
-                src="/images/hk-orange.png"
-                alt="Hadley's Kitchen logo ."
+                src="/images/hk-logo.png"
+                alt="Hadley's Kitchen logo."
                 width={1200}
                 height={1200}
               />
@@ -57,7 +63,7 @@ export default function HomePage() {
           <div>
             <p className="eyebrow eyebrow--dark">Why people come back</p>
             <h2 className="section-title section-title--dark">
-              Handmade bread and bakes with warmth and people at the center.
+              Small-batch baking with a generous, community-first spirit.
             </h2>
           </div>
 
