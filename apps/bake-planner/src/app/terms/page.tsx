@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function TermsPage() { return <main className="legal-page"><p className="eyebrow">Hadley’s Kitchen Bake Planner</p><h1>Terms</h1><p>This free planner assists with production calculations. Bakers remain responsible for verifying recipes, food safety, allergen handling, regulatory compliance, and final production quantities.</p><p>Service availability is not guaranteed. Do not rely on the planner as the sole copy of a recipe or legally required record.</p><Link href="/">Return to the planner</Link></main>; }
