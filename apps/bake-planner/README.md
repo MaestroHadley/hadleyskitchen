@@ -1,19 +1,19 @@
 # Hadley’s Kitchen Bake Planner
 
-Mobile-first production planning for market bakers. The app stores reusable gram-based recipes, guides event setup, and calculates batches, flour, starter, shopping, mixer loads, oven blocks, packaging, CSV, print/PDF, and optional Google exports.
+Mobile-first production planning for market bakers. The app stores reusable gram-based recipes, guides a focused five-step event workflow, and calculates batches, flour, starter, shopping, oven blocks, CSV, print/PDF, and optional Google exports.
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` and provide newly rotated public Supabase values. Never reuse credentials previously shared in chat.
+1. Copy `.env.example` to `.env.local` and provide the public Supabase URL and publishable key.
 2. Run `npm install`, then `npm run dev`.
-3. Apply `supabase/migrations/001_initial_planner.sql` to the connected Supabase project.
+3. Apply the SQL migrations in `supabase/migrations` in numeric order.
 4. In Supabase Auth, enable Google and email link sign-in and add `/api/auth/callback` URLs for local, preview, and production environments.
 
-Without environment variables, the interface runs safely as an interactive local sample using browser storage. Authentication and cloud persistence remain disabled.
+Without environment variables, development runs as an interactive in-memory sample. Authentication and cloud persistence remain disabled; production always requires Supabase.
 
 ## Google export setup
 
-Create a separate Google OAuth web client for Drive export. Enable Drive, Docs, and Sheets APIs; configure `/api/google/callback`; and add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a random 32+ byte `GOOGLE_TOKEN_ENCRYPTION_KEY` in Vercel. Google sign-in remains separate and does not request Drive scopes.
+Create a separate Google OAuth web client for Drive export. Enable Drive, Docs, and Sheets APIs; configure `/api/google/callback`; and add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a random 32+ byte `GOOGLE_TOKEN_ENCRYPTION_KEY` in Vercel. The integration uses the limited `drive.file` scope. Google sign-in remains separate and does not request Drive access.
 
 ## Vercel
 
