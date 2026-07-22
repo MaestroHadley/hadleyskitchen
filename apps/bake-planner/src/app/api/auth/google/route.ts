@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSupabaseConfig } from "@/lib/supabase/server-config";
 
 type PendingCookie = {
   name: string;
@@ -9,15 +10,14 @@ type PendingCookie = {
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const config = getServerSupabaseConfig();
 
-  if (!url || !key) {
+  if (!config) {
     return NextResponse.redirect(new URL("/?error=auth_unavailable", origin));
   }
 
   const pendingCookies: PendingCookie[] = [];
-  const supabase = createServerClient(url, key, {
+  const supabase = createServerClient(config.url, config.key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (values) => {

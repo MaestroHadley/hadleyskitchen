@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSupabaseConfig } from "@/lib/supabase/server-config";
 
 type PendingCookie = {
   name: string;
@@ -12,12 +13,11 @@ export async function GET(request: NextRequest) {
   const code = url.searchParams.get("code");
   const requestedNext = url.searchParams.get("next");
   const next = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : "/dashboard";
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!code || !supabaseUrl || !key) return NextResponse.redirect(new URL("/?error=auth_callback", url.origin));
+  const config = getServerSupabaseConfig();
+  if (!code || !config) return NextResponse.redirect(new URL("/?error=auth_callback", url.origin));
 
   const pendingCookies: PendingCookie[] = [];
-  const supabase = createServerClient(supabaseUrl, key, {
+  const supabase = createServerClient(config.url, config.key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (values) => {
@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       message: error.message,
       status: error.status,
       hasVerifierCookie: request.cookies.getAll().some(({ name }) => name.endsWith("-code-verifier")),
+      keyType: config.key.startsWith("eyJ") ? "legacy-anon" : "publishable",
     });
     return NextResponse.redirect(new URL("/?error=auth_callback", url.origin));
   }
