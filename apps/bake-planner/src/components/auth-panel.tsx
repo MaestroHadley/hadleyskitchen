@@ -12,7 +12,7 @@ export function AuthPanel({ error }: { error?: string }) {
   async function google() {
     setPending("google");
     setMessage("");
-    location.assign("/api/auth/google?next=/dashboard");
+    location.assign("/api/auth/google");
   }
 
   async function emailCode() {
@@ -23,7 +23,7 @@ export function AuthPanel({ error }: { error?: string }) {
     setMessage("");
     const { error: authError } = await supabase.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: `${location.origin}/api/auth/callback?next=/dashboard` },
+      options: { emailRedirectTo: `${location.origin}/api/auth/callback` },
     });
     setPending(null);
     setMessage(authError ? authError.message : "Check your inbox for a secure sign-in link.");

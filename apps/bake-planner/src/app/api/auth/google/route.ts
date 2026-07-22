@@ -7,13 +7,8 @@ type PendingCookie = {
   options?: Parameters<NextResponse["cookies"]["set"]>[2];
 };
 
-function safeNext(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
-}
-
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
-  const next = safeNext(request.nextUrl.searchParams.get("next"));
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -31,7 +26,6 @@ export async function GET(request: NextRequest) {
     },
   });
   const callback = new URL("/api/auth/callback", origin);
-  callback.searchParams.set("next", next);
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
