@@ -4,7 +4,7 @@ Mobile-first production planning for market bakers. The app stores reusable gram
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` and provide the public Supabase URL and publishable key.
+1. Copy `.env.example` to `.env.local` and provide the public Supabase URL and modern `sb_publishable_...` key. Do not wrap either value in quotes.
 2. Run `npm install`, then `npm run dev`.
 3. Apply the SQL migrations in `supabase/migrations` in numeric order.
 4. In Supabase Auth, enable Google and email link sign-in and add `/api/auth/callback` URLs for local, preview, and production environments.
@@ -17,7 +17,7 @@ Create a separate Google OAuth web client for Drive export. Enable Drive, Docs, 
 
 ## Vercel
 
-Create a second Vercel project from this repository with Root Directory `apps/bake-planner`, then attach `app.hadleyskitchen.com`. Configure environment variables separately from the public bakery site.
+Create a second Vercel project from this repository with Root Directory `apps/bake-planner`, then attach `app.hadleyskitchen.com`. Configure environment variables separately from the public bakery site. Use only the canonical `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names in every deployment environment.
 
 ## Checks
 

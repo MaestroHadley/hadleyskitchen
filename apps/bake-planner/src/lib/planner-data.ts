@@ -1,9 +1,10 @@
 import { samplePlannerEvent, sampleRecipes, sampleSettings } from "@/data/sample";
 import type { Ingredient, PlannerEvent, PlannerSettings, Recipe } from "@/lib/planner";
 import { filterRecipeCollection, type RecipeCollectionFilters } from "@/lib/recipe-library";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
-export const isDemoMode = () => process.env.NODE_ENV !== "production" && (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+export const isDemoMode = () => process.env.NODE_ENV !== "production" && !getSupabasePublicConfig();
 
 export async function getSessionUser() {
   const supabase = await createClient();

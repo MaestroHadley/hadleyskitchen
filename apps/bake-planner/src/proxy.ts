@@ -1,12 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getServerSupabaseConfig } from "@/lib/supabase/server-config";
+import { getSupabasePublicConfig } from "@/lib/supabase/config";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const config = getServerSupabaseConfig();
+  const config = getSupabasePublicConfig();
   if (!config) return response;
-  const supabase = createServerClient(config.url, config.key, {
+  const supabase = createServerClient(config.url, config.publishableKey, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll: (values) => {
@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
-  await supabase.auth.getUser();
+  await supabase.auth.getClaims();
   return response;
 }
 

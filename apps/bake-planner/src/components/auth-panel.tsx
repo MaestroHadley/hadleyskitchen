@@ -10,9 +10,20 @@ export function AuthPanel({ error }: { error?: string }) {
   const [pending, setPending] = useState<"google" | "email" | null>(null);
 
   async function google() {
+    const supabase = createClient();
+    if (!supabase) return setMessage("Sign-in is temporarily unavailable.");
     setPending("google");
     setMessage("");
-    location.assign("/api/auth/google");
+    const callback = new URL("/api/auth/callback", location.origin);
+    callback.searchParams.set("next", "/dashboard");
+    const { error: authError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callback.toString() },
+    });
+    if (authError) {
+      setPending(null);
+      setMessage(authError.message);
+    }
   }
 
   async function emailCode() {
