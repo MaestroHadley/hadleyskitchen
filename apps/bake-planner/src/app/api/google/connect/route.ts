@@ -11,5 +11,8 @@ export async function GET(request: Request) {
   const state = crypto.randomBytes(24).toString("base64url");
   const response = NextResponse.redirect(googleAuthorizationUrl(new URL(request.url).origin, state));
   response.cookies.set("google_oauth_state", state, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 600, path: "/" });
+  const requestedReturn = new URL(request.url).searchParams.get("returnTo");
+  const returnTo = requestedReturn?.startsWith("/") && !requestedReturn.startsWith("//") ? requestedReturn : "/account";
+  response.cookies.set("google_oauth_return", returnTo, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 600, path: "/" });
   return response;
 }
