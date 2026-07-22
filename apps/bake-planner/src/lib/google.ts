@@ -1,10 +1,9 @@
 import crypto from "node:crypto";
 
-const scopes = [
-  "https://www.googleapis.com/auth/drive.file",
-  "https://www.googleapis.com/auth/documents",
-  "https://www.googleapis.com/auth/spreadsheets",
-].join(" ");
+// `drive.file` grants access only to files the planner creates or the user
+// explicitly opens with it. Both the Docs and Sheets APIs accept this scope,
+// so broader document-wide scopes are unnecessary.
+const scopes = "https://www.googleapis.com/auth/drive.file";
 
 export function googleAuthorizationUrl(origin: string, state: string) {
   const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: `${origin}/api/google/callback`, response_type: "code", scope: scopes, access_type: "offline", prompt: "consent", state });
