@@ -8,6 +8,7 @@ const body = Source_Sans_3({ subsets: ["latin"], variable: "--font-body" });
 export const metadata: Metadata = {
   title: { default: "Bake Planner | Hadley’s Kitchen", template: "%s | Hadley’s Kitchen Bake Planner" },
   description: "Save recipes once, plan market bakes visually, and create clear production reports.",
+  icons: { icon: "/images/hk-logo.png", apple: "/images/hk-logo.png" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

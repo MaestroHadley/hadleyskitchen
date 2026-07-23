@@ -109,4 +109,11 @@ export const samplePlannerEvent: PlannerEvent = {
   starterHydration: 1,
   items: sampleEvent,
   schedule: sampleSchedule,
+  qaChecks: {
+    quantities: false,
+    starter: false,
+    shopping: false,
+    oven: false,
+    finalCount: false,
+  },
 };

@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isDemoMode } from "@/lib/planner-data";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) return NextResponse.json({ connected: false, exports: [] });
   const supabase = await createClient();
   const { data: auth } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
   if (!supabase || !auth.user) return NextResponse.json({ error: "Sign in to use Google exports." }, { status: 401 });
