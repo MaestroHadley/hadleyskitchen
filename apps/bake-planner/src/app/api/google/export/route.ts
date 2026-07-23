@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { decryptToken } from "@/lib/google";
+import { buildGoogleDocModel, type GoogleDocTable } from "@/lib/google-doc";
 import { getEvent } from "@/lib/planner-data";
 import { buildReportSections } from "@/lib/reports";
+
+export const maxDuration = 60;
 
 const payloadSchema = z.object({
   kind: z.enum(["doc", "sheet"]),
@@ -29,6 +32,215 @@ async function googleFetch(url: string, token: string, init: RequestInit = {}) {
   return body;
 }
 
+const DOC_COLORS = {
+  charcoal: { red: 0.15, green: 0.13, blue: 0.11 },
+  copper: { red: 0.58, green: 0.24, blue: 0.12 },
+  cream: { red: 0.98, green: 0.96, blue: 0.91 },
+  softCopper: { red: 0.95, green: 0.86, blue: 0.79 },
+  rule: { red: 0.82, green: 0.77, blue: 0.68 },
+  white: { red: 1, green: 1, blue: 1 },
+};
+
+type DocCell = { startIndex?: number; endIndex?: number; content?: Array<{ startIndex?: number; endIndex?: number }> };
+type DocTable = { tableRows?: Array<{ tableCells?: DocCell[] }> };
+type DocElement = { startIndex?: number; endIndex?: number; table?: DocTable };
+type GoogleDocument = { body?: { content?: DocElement[] } };
+
+const optionalColor = (rgbColor: { red: number; green: number; blue: number }) => ({ color: { rgbColor } });
+const dimension = (magnitude: number) => ({ magnitude, unit: "PT" });
+
+function documentEndIndex(document: GoogleDocument) {
+  return document.body?.content?.at(-1)?.endIndex ?? 2;
+}
+
+async function docBatchUpdate(fileId: string, token: string, requests: Array<Record<string, unknown>>) {
+  if (!requests.length) return;
+  await googleFetch(`https://docs.googleapis.com/v1/documents/${fileId}:batchUpdate`, token, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+}
+
+async function getGoogleDocument(fileId: string, token: string): Promise<GoogleDocument> {
+  return googleFetch(`https://docs.googleapis.com/v1/documents/${fileId}`, token);
+}
+
+async function appendDocText(fileId: string, token: string, text: string) {
+  const document = await getGoogleDocument(fileId, token);
+  const startIndex = documentEndIndex(document) - 1;
+  await docBatchUpdate(fileId, token, [{ insertText: { location: { index: startIndex }, text } }]);
+  return { startIndex, endIndex: startIndex + text.length };
+}
+
+function cellTextRange(cell: DocCell) {
+  const startIndex = cell.content?.[0]?.startIndex ?? cell.startIndex;
+  const endIndex = (cell.content?.at(-1)?.endIndex ?? cell.endIndex ?? 0) - 1;
+  return startIndex !== undefined && endIndex > startIndex ? { startIndex, endIndex } : null;
+}
+
+async function appendDocTable(fileId: string, token: string, table: GoogleDocTable) {
+  const rows = table.rows.length;
+  const columns = Math.max(...table.rows.map((row) => row.length), 1);
+  const before = await getGoogleDocument(fileId, token);
+  const location = { index: documentEndIndex(before) - 1 };
+  await docBatchUpdate(fileId, token, [{ insertTable: { rows, columns, location } }]);
+
+  const emptyDocument = await getGoogleDocument(fileId, token);
+  const tableElement = emptyDocument.body?.content?.filter((element) => element.table).at(-1);
+  if (!tableElement?.table || tableElement.startIndex === undefined) throw new Error("Google could not format the production packet table.");
+  const emptyRows = tableElement.table.tableRows ?? [];
+  const insertions = emptyRows.flatMap((row, rowIndex) => (row.tableCells ?? []).map((cell, columnIndex) => ({
+    index: cell.content?.[0]?.startIndex ?? (cell.startIndex ?? 0) + 1,
+    text: table.rows[rowIndex]?.[columnIndex] ?? "",
+  }))).filter((item) => item.index > 0 && item.text).sort((a, b) => b.index - a.index);
+  await docBatchUpdate(fileId, token, insertions.map((item) => ({ insertText: { location: { index: item.index }, text: item.text } })));
+
+  const filledDocument = await getGoogleDocument(fileId, token);
+  const filledElement = filledDocument.body?.content?.filter((element) => element.table).at(-1);
+  if (!filledElement?.table || filledElement.startIndex === undefined) throw new Error("Google could not finish the production packet table.");
+  const filledRows = filledElement.table.tableRows ?? [];
+  const tableStartLocation = { index: filledElement.startIndex };
+  const thinBorder = { color: optionalColor(DOC_COLORS.rule), width: dimension(0.5), dashStyle: "SOLID" };
+  const requests: Array<Record<string, unknown>> = [
+    {
+      updateTableCellStyle: {
+        tableRange: { tableCellLocation: { tableStartLocation, rowIndex: 0, columnIndex: 0 }, rowSpan: rows, columnSpan: columns },
+        tableCellStyle: {
+          backgroundColor: optionalColor(DOC_COLORS.cream),
+          contentAlignment: "MIDDLE",
+          paddingTop: dimension(table.variant === "summary" ? 8 : 5),
+          paddingBottom: dimension(table.variant === "summary" ? 8 : 5),
+          paddingLeft: dimension(7),
+          paddingRight: dimension(7),
+          borderTop: thinBorder,
+          borderBottom: thinBorder,
+          borderLeft: thinBorder,
+          borderRight: thinBorder,
+        },
+        fields: "backgroundColor,contentAlignment,paddingTop,paddingBottom,paddingLeft,paddingRight,borderTop,borderBottom,borderLeft,borderRight",
+      },
+    },
+    ...table.columnWidths.map((width, columnIndex) => ({
+      updateTableColumnProperties: {
+        tableStartLocation,
+        columnIndices: [columnIndex],
+        tableColumnProperties: { widthType: "FIXED_WIDTH", width: dimension(width) },
+        fields: "widthType,width",
+      },
+    })),
+  ];
+
+  if (table.variant === "summary") {
+    requests.push(
+      {
+        updateTableCellStyle: {
+          tableRange: { tableCellLocation: { tableStartLocation, rowIndex: 0, columnIndex: 0 }, rowSpan: 1, columnSpan: columns },
+          tableCellStyle: { backgroundColor: optionalColor(DOC_COLORS.charcoal) },
+          fields: "backgroundColor",
+        },
+      },
+      {
+        updateTableCellStyle: {
+          tableRange: { tableCellLocation: { tableStartLocation, rowIndex: 1, columnIndex: 0 }, rowSpan: 1, columnSpan: columns },
+          tableCellStyle: { backgroundColor: optionalColor(DOC_COLORS.softCopper) },
+          fields: "backgroundColor",
+        },
+      },
+    );
+  } else if (table.headerRows) {
+    requests.push({
+      updateTableCellStyle: {
+        tableRange: { tableCellLocation: { tableStartLocation, rowIndex: 0, columnIndex: 0 }, rowSpan: table.headerRows, columnSpan: columns },
+        tableCellStyle: { backgroundColor: optionalColor(DOC_COLORS.charcoal) },
+        fields: "backgroundColor",
+      },
+    });
+    for (let rowIndex = table.headerRows; rowIndex < rows; rowIndex += 2) {
+      requests.push({
+        updateTableCellStyle: {
+          tableRange: { tableCellLocation: { tableStartLocation, rowIndex, columnIndex: 0 }, rowSpan: 1, columnSpan: columns },
+          tableCellStyle: { backgroundColor: optionalColor(DOC_COLORS.white) },
+          fields: "backgroundColor",
+        },
+      });
+    }
+  }
+
+  for (const [rowIndex, row] of filledRows.entries()) {
+    for (const [columnIndex, cell] of (row.tableCells ?? []).entries()) {
+      const range = cellTextRange(cell);
+      if (!range) continue;
+      const isSummaryValue = table.variant === "summary" && rowIndex === 0;
+      const isSummaryLabel = table.variant === "summary" && rowIndex === 1;
+      const isHeader = Boolean(table.headerRows && rowIndex < table.headerRows);
+      const isChecklistBox = table.variant === "checklist" && columnIndex === 0;
+      requests.push(
+        {
+          updateTextStyle: {
+            range,
+            textStyle: {
+              weightedFontFamily: { fontFamily: isSummaryValue ? "Georgia" : "Arial" },
+              fontSize: dimension(isSummaryValue ? 16 : isSummaryLabel || isHeader ? 8.5 : isChecklistBox ? 15 : 9.5),
+              bold: isSummaryValue || isSummaryLabel || isHeader || Boolean(table.firstColumnEmphasis && columnIndex === 0),
+              foregroundColor: optionalColor(isSummaryValue || isHeader ? DOC_COLORS.white : isSummaryLabel ? DOC_COLORS.copper : DOC_COLORS.charcoal),
+            },
+            fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+          },
+        },
+        {
+          updateParagraphStyle: {
+            range,
+            paragraphStyle: { alignment: table.variant === "summary" ? "CENTER" : table.alignments?.[columnIndex] ?? "START", lineSpacing: 110 },
+            fields: "alignment,lineSpacing",
+          },
+        },
+      );
+    }
+  }
+  await docBatchUpdate(fileId, token, requests);
+}
+
+async function appendSectionHeading(fileId: string, token: string, eyebrow: string, title: string) {
+  const text = `${eyebrow}\n${title}\n`;
+  const range = await appendDocText(fileId, token, text);
+  const titleStart = range.startIndex + eyebrow.length + 1;
+  await docBatchUpdate(fileId, token, [
+    {
+      updateTextStyle: {
+        range: { startIndex: range.startIndex, endIndex: range.startIndex + eyebrow.length },
+        textStyle: { weightedFontFamily: { fontFamily: "Arial" }, fontSize: dimension(8), bold: true, foregroundColor: optionalColor(DOC_COLORS.copper) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: titleStart, endIndex: titleStart + title.length },
+        textStyle: { weightedFontFamily: { fontFamily: "Georgia" }, fontSize: dimension(17), bold: true, foregroundColor: optionalColor(DOC_COLORS.charcoal) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateParagraphStyle: {
+        range: { startIndex: range.startIndex, endIndex: titleStart },
+        paragraphStyle: { spaceAbove: dimension(13), spaceBelow: dimension(2), keepWithNext: true },
+        fields: "spaceAbove,spaceBelow,keepWithNext",
+      },
+    },
+    {
+      updateParagraphStyle: {
+        range: { startIndex: titleStart, endIndex: range.endIndex },
+        paragraphStyle: { spaceBelow: dimension(7), keepWithNext: true },
+        fields: "spaceBelow,keepWithNext",
+      },
+    },
+  ]);
+}
+
+async function appendPageBreak(fileId: string, token: string) {
+  const document = await getGoogleDocument(fileId, token);
+  await docBatchUpdate(fileId, token, [{ insertPageBreak: { location: { index: documentEndIndex(document) - 1 } } }]);
+}
+
 async function exportDoc(title: string, sections: ReturnType<typeof buildReportSections>, token: string, existingFileId?: string) {
   let fileId = existingFileId;
   if (!fileId) {
@@ -36,20 +248,110 @@ async function exportDoc(title: string, sections: ReturnType<typeof buildReportS
     fileId = created.documentId;
   }
   if (!fileId) throw new Error("Google did not return a document ID.");
-  const current = await googleFetch(`https://docs.googleapis.com/v1/documents/${fileId}`, token);
-  const endIndex = current.body?.content?.at(-1)?.endIndex ?? 1;
-  const blocks = sections.map((section) => `${section.title}\n${section.rows.map((row) => row.join("  ·  ")).join("\n")}`).join("\n\n");
-  const content = `${title}\n\n${blocks}\n`;
-  const requests: Array<Record<string, unknown>> = [];
-  if (endIndex > 2) requests.push({ deleteContentRange: { range: { startIndex: 1, endIndex: endIndex - 1 } } });
-  requests.push({ insertText: { location: { index: 1 }, text: content } });
-  requests.push({ updateParagraphStyle: { range: { startIndex: 1, endIndex: title.length + 1 }, paragraphStyle: { namedStyleType: "TITLE" }, fields: "namedStyleType" } });
-  let cursor = title.length + 3;
-  for (const section of sections) {
-    requests.push({ updateParagraphStyle: { range: { startIndex: cursor, endIndex: cursor + section.title.length + 1 }, paragraphStyle: { namedStyleType: "HEADING_1", spaceAbove: { magnitude: 12, unit: "PT" }, spaceBelow: { magnitude: 4, unit: "PT" } }, fields: "namedStyleType,spaceAbove,spaceBelow" } });
-    cursor += section.title.length + 1 + section.rows.map((row) => row.join("  ·  ")).join("\n").length + 2;
+  const model = buildGoogleDocModel(title, sections);
+  const current = await getGoogleDocument(fileId, token);
+  const endIndex = documentEndIndex(current);
+  const resetRequests: Array<Record<string, unknown>> = [];
+  if (endIndex > 2) resetRequests.push({ deleteContentRange: { range: { startIndex: 1, endIndex: endIndex - 1 } } });
+  resetRequests.push({
+    updateDocumentStyle: {
+      documentStyle: { marginTop: dimension(48), marginBottom: dimension(48), marginLeft: dimension(60), marginRight: dimension(60) },
+      fields: "marginTop,marginBottom,marginLeft,marginRight",
+    },
+  });
+  await docBatchUpdate(fileId, token, resetRequests);
+
+  const opening = `HADLEY’S KITCHEN\nBAKE PLANNER · PRODUCTION PACKET\n\n${model.eventName}\n${model.eventDate}\n${model.status.toUpperCase()}\n`;
+  const openingRange = await appendDocText(fileId, token, opening);
+  const packetLabelStart = openingRange.startIndex + "HADLEY’S KITCHEN\n".length;
+  const eventNameStart = openingRange.startIndex + opening.indexOf(model.eventName);
+  const dateStart = openingRange.startIndex + opening.indexOf(model.eventDate);
+  const statusStart = openingRange.startIndex + opening.lastIndexOf(model.status.toUpperCase());
+  await docBatchUpdate(fileId, token, [
+    {
+      updateTextStyle: {
+        range: { startIndex: openingRange.startIndex, endIndex: openingRange.startIndex + "HADLEY’S KITCHEN".length },
+        textStyle: { weightedFontFamily: { fontFamily: "Georgia" }, fontSize: dimension(10), bold: true, foregroundColor: optionalColor(DOC_COLORS.charcoal) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: packetLabelStart, endIndex: packetLabelStart + "BAKE PLANNER · PRODUCTION PACKET".length },
+        textStyle: { weightedFontFamily: { fontFamily: "Arial" }, fontSize: dimension(8), bold: true, foregroundColor: optionalColor(DOC_COLORS.copper) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: eventNameStart, endIndex: eventNameStart + model.eventName.length },
+        textStyle: { weightedFontFamily: { fontFamily: "Georgia" }, fontSize: dimension(28), bold: true, foregroundColor: optionalColor(DOC_COLORS.charcoal) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateParagraphStyle: {
+        range: { startIndex: eventNameStart, endIndex: eventNameStart + model.eventName.length + 1 },
+        paragraphStyle: { spaceAbove: dimension(7), spaceBelow: dimension(7), borderBottom: { color: optionalColor(DOC_COLORS.copper), width: dimension(1.5), padding: dimension(7), dashStyle: "SOLID" }, keepWithNext: true },
+        fields: "spaceAbove,spaceBelow,borderBottom,keepWithNext",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: dateStart, endIndex: statusStart + model.status.length },
+        textStyle: { weightedFontFamily: { fontFamily: "Arial" }, fontSize: dimension(9.5), foregroundColor: optionalColor(DOC_COLORS.charcoal), bold: false },
+        fields: "weightedFontFamily,fontSize,foregroundColor,bold",
+      },
+    },
+    {
+      updateTextStyle: {
+        range: { startIndex: statusStart, endIndex: statusStart + model.status.length },
+        textStyle: { bold: true, foregroundColor: optionalColor(DOC_COLORS.copper) },
+        fields: "bold,foregroundColor",
+      },
+    },
+    {
+      updateParagraphStyle: {
+        range: { startIndex: dateStart, endIndex: openingRange.endIndex },
+        paragraphStyle: { lineSpacing: 120, spaceBelow: dimension(2) },
+        fields: "lineSpacing,spaceBelow",
+      },
+    },
+  ]);
+
+  await appendDocTable(fileId, token, {
+    rows: [model.summary.map((item) => item.value), model.summary.map((item) => item.label)],
+    columnWidths: [120, 120, 120, 120],
+    alignments: ["CENTER", "CENTER", "CENTER", "CENTER"],
+    variant: "summary",
+  });
+
+  for (const section of model.sections) {
+    if (section.pageBreakBefore) await appendPageBreak(fileId, token);
+    await appendSectionHeading(fileId, token, section.eyebrow, section.title);
+    for (const table of section.tables) {
+      await appendDocTable(fileId, token, table);
+      await appendDocText(fileId, token, "\n");
+    }
   }
-  await googleFetch(`https://docs.googleapis.com/v1/documents/${fileId}:batchUpdate`, token, { method: "POST", body: JSON.stringify({ requests }) });
+
+  const footer = await appendDocText(fileId, token, "HADLEY’S KITCHEN · BAKE PLANNER\nGenerated as a planning snapshot. Verify final quantities before production.\n");
+  await docBatchUpdate(fileId, token, [
+    {
+      updateTextStyle: {
+        range: footer,
+        textStyle: { weightedFontFamily: { fontFamily: "Arial" }, fontSize: dimension(7.5), bold: false, foregroundColor: optionalColor(DOC_COLORS.copper) },
+        fields: "weightedFontFamily,fontSize,bold,foregroundColor",
+      },
+    },
+    {
+      updateParagraphStyle: {
+        range: footer,
+        paragraphStyle: { alignment: "CENTER", spaceAbove: dimension(12), borderTop: { color: optionalColor(DOC_COLORS.rule), width: dimension(0.5), padding: dimension(7), dashStyle: "SOLID" } },
+        fields: "alignment,spaceAbove,borderTop",
+      },
+    },
+  ]);
   return { fileId, fileUrl: `https://docs.google.com/document/d/${fileId}/edit` };
 }
 
