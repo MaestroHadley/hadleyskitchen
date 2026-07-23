@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { ArrowClockwise, ArrowSquareOut, CheckCircle, FileDoc, GoogleDriveLogo, SpinnerGap, Table } from "@phosphor-icons/react";
+import { googleConnectionFailureMessage } from "@/lib/google-oauth";
 
 type ExportRecord = { kind: "doc" | "sheet"; google_file_id: string; google_file_url: string; exported_at: string };
 type Connection = { connected: boolean; connectedAt?: string; exports: ExportRecord[] };
 
-export function GoogleExportPanel({ eventId }: { eventId: string }) {
+export function GoogleExportPanel({ eventId, callbackStatus, failureReason }: { eventId: string; callbackStatus?: string; failureReason?: string }) {
   const [connection, setConnection] = useState<Connection | null>(null);
   const [state, setState] = useState<"loading" | "idle" | "exporting" | "success" | "error">("loading");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(callbackStatus === "failed" ? googleConnectionFailureMessage(failureReason) : callbackStatus === "connected" ? "Google Drive connected." : "");
   const [file, setFile] = useState<{ url: string; exportedAt: string; kind: "doc" | "sheet" } | null>(null);
 
   useEffect(() => {
