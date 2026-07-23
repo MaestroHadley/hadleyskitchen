@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle, GoogleDriveLogo, SpinnerGap, Trash } from "@phosphor-icons/react";
+import { googleConnectionFailureMessage } from "@/lib/google-oauth";
 
-export function DriveConnection({ connectedFromCallback, failedFromCallback }: { connectedFromCallback?: boolean; failedFromCallback?: boolean }) {
+export function DriveConnection({ connectedFromCallback, failedFromCallback, failureReason }: { connectedFromCallback?: boolean; failedFromCallback?: boolean; failureReason?: string }) {
   const [connected, setConnected] = useState<boolean | null>(null);
-  const [message, setMessage] = useState(connectedFromCallback ? "Google Drive connected." : failedFromCallback ? "Google Drive could not be connected. Please try again." : "");
+  const [message, setMessage] = useState(connectedFromCallback ? "Google Drive connected." : failedFromCallback ? googleConnectionFailureMessage(failureReason) : "");
   useEffect(() => {
     let active = true;
     void fetch("/api/google/status").then(async (response) => {
