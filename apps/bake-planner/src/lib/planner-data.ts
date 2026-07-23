@@ -1,5 +1,6 @@
 import { samplePlannerEvent, sampleRecipes, sampleSettings } from "@/data/sample";
-import type { Ingredient, PlannerEvent, PlannerSettings, Recipe } from "@/lib/planner";
+import { emptyQaChecks, qaCheckKeys, type EventQaChecks, type Ingredient, type PlannerEvent, type PlannerSettings, type Recipe } from "@/lib/planner";
+import { filterEventCollection, type EventCollectionFilters, type EventSort, type EventSummary, type EventView } from "@/lib/event-library";
 import { filterRecipeCollection, type RecipeCollectionFilters } from "@/lib/recipe-library";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
@@ -124,13 +125,53 @@ export async function getSettings(): Promise<PlannerSettings> {
   } : sampleSettings;
 }
 
-export async function listEvents() {
-  if (isDemoMode()) return [samplePlannerEvent];
+export type EventFilters = EventCollectionFilters & {
+  view?: EventView;
+  sort?: EventSort;
+  page?: number;
+  pageSize?: number;
+};
+
+function mapQaChecks(value: unknown): EventQaChecks {
+  const source = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  return Object.fromEntries(qaCheckKeys.map((key) => [key, source[key] === true])) as EventQaChecks;
+}
+
+export async function listEvents(filters: EventFilters = {}) {
+  const page = Math.max(1, filters.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, filters.pageSize ?? 25));
+  if (isDemoMode()) {
+    const rows = filterEventCollection([{
+      id: samplePlannerEvent.id,
+      name: samplePlannerEvent.name,
+      eventAt: samplePlannerEvent.eventAt,
+      status: samplePlannerEvent.status,
+      updatedAt: samplePlannerEvent.updatedAt ?? samplePlannerEvent.eventAt ?? "",
+      totalProducts: samplePlannerEvent.items.reduce((sum, item) => sum + item.target, 0),
+    }], filters);
+    const from = (page - 1) * pageSize;
+    return { events: rows.slice(from, from + pageSize), total: rows.length, page, pageSize };
+  }
   const { supabase, user } = await getSessionUser();
-  if (!supabase || !user) return [];
-  const { data, error } = await supabase.from("events").select("id, name, event_at, status, updated_at, event_items(target)").eq("user_id", user.id).neq("status", "archived").order("event_at", { ascending: true, nullsFirst: false });
+  if (!supabase || !user) return { events: [], total: 0, page, pageSize };
+  const view = filters.view ?? "upcoming";
+  const now = (filters.now ?? new Date()).toISOString();
+  let query = supabase.from("events")
+    .select("id, name, event_at, status, updated_at, event_items(target)", { count: "exact" })
+    .eq("user_id", user.id)
+    .neq("status", "archived");
+  if (filters.query) query = query.ilike("name", `%${filters.query.replaceAll("%", "")}%`);
+  if (view === "upcoming") query = query.gte("event_at", now);
+  if (view === "drafts") query = query.eq("status", "draft");
+  if (view === "completed") query = query.eq("status", "finalized");
+  if (view === "past") query = query.lt("event_at", now);
+  if (filters.sort === "name") query = query.order("name");
+  else if (filters.sort === "updated") query = query.order("updated_at", { ascending: false });
+  else query = query.order("event_at", { ascending: view !== "past", nullsFirst: false });
+  const from = (page - 1) * pageSize;
+  const { data, count, error } = await query.range(from, from + pageSize - 1);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((event) => ({
+  const events: EventSummary[] = (data ?? []).map((event) => ({
     id: event.id,
     name: event.name,
     eventAt: event.event_at,
@@ -138,6 +179,7 @@ export async function listEvents() {
     updatedAt: event.updated_at,
     totalProducts: (event.event_items ?? []).reduce((sum: number, item: { target: number | string }) => sum + Number(item.target), 0),
   }));
+  return { events, total: count ?? 0, page, pageSize };
 }
 
 export async function getEvent(id: string): Promise<{ event: PlannerEvent; recipes: Recipe[]; settings: PlannerSettings } | null> {
@@ -163,6 +205,7 @@ export async function getEvent(id: string): Promise<{ event: PlannerEvent; recip
       starterHydration: Number(event.starter_hydration),
       items: items.map((item: { id: string; recipe_id: string; target: number | string; batch_policy: "whole" | "exact" }) => ({ id: item.id, recipeId: item.recipe_id, target: Number(item.target), policy: item.batch_policy })),
       schedule: (event.schedule_blocks ?? []).sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order).map((block: { id: string; day_label: string; title: string; notes: string; sort_order: number }) => ({ id: block.id, dayLabel: block.day_label, title: block.title, notes: block.notes, sortOrder: block.sort_order })),
+      qaChecks: event.qa_checks ? mapQaChecks(event.qa_checks) : emptyQaChecks(),
       createdAt: event.created_at,
       updatedAt: event.updated_at,
     },

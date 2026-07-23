@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { sampleEvent, sampleRecipes, sampleSchedule } from "@/data/sample";
 import { getRecipe, getSessionUser, isDemoMode } from "@/lib/planner-data";
-import type { PlannerEvent, Recipe } from "@/lib/planner";
+import type { EventQaChecks, PlannerEvent, Recipe } from "@/lib/planner";
 
 const ingredientSchema = z.object({
   id: z.string().optional(),
@@ -27,6 +27,14 @@ const recipeSchema = z.object({
   ingredients: z.array(ingredientSchema).min(1).max(200),
 });
 
+const qaChecksSchema = z.object({
+  quantities: z.boolean(),
+  starter: z.boolean(),
+  shopping: z.boolean(),
+  oven: z.boolean(),
+  finalCount: z.boolean(),
+});
+
 const eventSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(120),
@@ -35,6 +43,7 @@ const eventSchema = z.object({
   starterHydration: z.number().positive().max(3),
   items: z.array(z.object({ recipeId: z.string().min(1), target: z.number().min(0), policy: z.enum(["whole", "exact"]) })).max(250),
   schedule: z.array(z.object({ dayLabel: z.string().max(80), title: z.string().max(160), notes: z.string().max(1000), sortOrder: z.number().int() })).max(100),
+  qaChecks: qaChecksSchema,
 });
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
@@ -127,9 +136,12 @@ export async function saveEventPlan(input: PlannerEvent): Promise<ActionResult> 
     p_schedule: parsed.data.schedule,
   });
   if (error) return { ok: false, error: error.message };
+  const { error: qaError } = await supabase.from("events").update({ qa_checks: parsed.data.qaChecks }).eq("id", input.id).eq("user_id", user.id);
+  if (qaError) return { ok: false, error: qaError.message };
   revalidatePath(`/events/${input.id}/plan`);
   revalidatePath(`/events/${input.id}/report`);
   revalidatePath("/dashboard");
+  revalidatePath("/events");
   return { ok: true, id: input.id };
 }
 
@@ -144,6 +156,7 @@ export async function finishEvent(input: PlannerEvent): Promise<ActionResult> {
   revalidatePath(`/events/${input.id}/plan`);
   revalidatePath(`/events/${input.id}/report`);
   revalidatePath("/dashboard");
+  revalidatePath("/events");
   return { ok: true, id: input.id };
 }
 
@@ -155,7 +168,53 @@ export async function reopenEvent(id: string): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/events/${id}/plan`);
   revalidatePath(`/events/${id}/report`);
+  revalidatePath("/events");
   return { ok: true, id };
+}
+
+export async function saveEventQaChecks(id: string, checks: EventQaChecks): Promise<ActionResult> {
+  const parsed = z.object({
+    id: z.string().uuid(),
+    checks: qaChecksSchema,
+  }).safeParse({ id, checks });
+  if (!parsed.success) return { ok: false, error: "Check the production checklist values." };
+  if (isDemoMode()) return { ok: true, id };
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) return { ok: false, error: "Sign in to update this event." };
+  const { data, error } = await supabase.from("events")
+    .update({ qa_checks: parsed.data.checks, updated_at: new Date().toISOString() })
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id)
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not save the checklist." };
+  revalidatePath(`/events/${id}/report`);
+  revalidatePath("/events");
+  return { ok: true, id };
+}
+
+export async function deleteEventPermanently(input: { eventId: string; eventName: string; acknowledged: boolean }): Promise<ActionResult> {
+  const parsed = z.object({
+    eventId: z.string().uuid(),
+    eventName: z.string().trim().min(1).max(120),
+    acknowledged: z.literal(true),
+  }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Confirm the event name and permanent deletion." };
+  if (isDemoMode()) return { ok: true, id: input.eventId };
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) return { ok: false, error: "Sign in to delete this event." };
+  const { data: event, error: eventError } = await supabase.from("events")
+    .select("id, name")
+    .eq("id", parsed.data.eventId)
+    .eq("user_id", user.id)
+    .single();
+  if (eventError || !event) return { ok: false, error: "Event not found." };
+  if (event.name !== parsed.data.eventName) return { ok: false, error: "The event name does not match." };
+  const { error } = await supabase.rpc("delete_event_with_archive", { p_event_id: parsed.data.eventId });
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/events");
+  revalidatePath("/dashboard");
+  return { ok: true, id: parsed.data.eventId };
 }
 
 async function insertRecipe(source: Recipe, userId: string, supabase: NonNullable<Awaited<ReturnType<typeof getSessionUser>>["supabase"]>) {

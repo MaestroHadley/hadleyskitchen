@@ -6,8 +6,8 @@ import { calculatePlan, formatBatches, formatGrams } from "@/lib/planner";
 import { getEvent, listEvents, listRecipes } from "@/lib/planner-data";
 
 export default async function DashboardPage() {
-  const [events, recipeResult] = await Promise.all([listEvents(), listRecipes({ pageSize: 4 })]);
-  if (!events.length && !recipeResult.total) return <>
+  const [eventResult, recipeResult] = await Promise.all([listEvents({ view: "upcoming", pageSize: 1 }), listRecipes({ pageSize: 4 })]);
+  if (!eventResult.total && !recipeResult.total) return <>
     <PageHeader eyebrow="Welcome to your workspace" title="Start with a little momentum." description="Choose the setup that feels right. You can remove the sample at any time." />
     <section className="onboarding-grid">
       <article className="onboarding-card featured"><span className="onboarding-icon"><Sparkle weight="fill" /></span><p className="eyebrow">Recommended</p><h2>Explore the Saturday sample</h2><p>See a complete event with nine recipes, exact starter control, and a production-ready shopping list.</p><form action={seedSampleWorkspace}><button className="button light icon-button" type="submit">Add the sample workspace<ArrowRight /></button></form></article>
@@ -15,11 +15,11 @@ export default async function DashboardPage() {
     </section>
   </>;
 
-  const nextEvent = events[0];
+  const nextEvent = eventResult.events[0];
   const eventData = nextEvent ? await getEvent(nextEvent.id) : null;
   const plan = eventData ? calculatePlan(eventData.recipes, eventData.event.items, eventData.settings) : null;
   return <>
-    <PageHeader eyebrow="Production workspace" title="Good bakes start with a calm plan." description="Everything you need for the next market, without the spreadsheet." actions={<Link className="button primary icon-button" href="/events/new"><CalendarBlank weight="bold" />Plan an event</Link>} />
+    <PageHeader eyebrow="Production workspace" title="Good bakes start with a calm plan." description="Everything you need for the next market, without the spreadsheet." actions={<div className="button-row"><Link className="button secondary" href="/events">View all events</Link><Link className="button primary icon-button" href="/events/new"><CalendarBlank weight="bold" />Plan an event</Link></div>} />
     {nextEvent && plan ? <section className="hero-event">
       <div><p className="eyebrow">Next event</p><h2>{nextEvent.name}</h2><p>{nextEvent.eventAt ? new Intl.DateTimeFormat("en", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(nextEvent.eventAt)) : "Date not set"}</p></div>
       <div className="hero-event-status"><span className={nextEvent.status === "finalized" ? "status-pill finalized" : "status-pill"}>{nextEvent.status === "finalized" ? <CheckCircle weight="fill" /> : <i />}{nextEvent.status}</span><Link className="button light icon-button" href={`/events/${nextEvent.id}/${nextEvent.status === "finalized" ? "report" : "plan"}`}>{nextEvent.status === "finalized" ? "View report" : "Continue planning"}<ArrowRight /></Link></div>

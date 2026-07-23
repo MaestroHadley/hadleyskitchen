@@ -48,6 +48,18 @@ export type ScheduleBlock = {
   sortOrder: number;
 };
 
+export const qaCheckKeys = ["quantities", "starter", "shopping", "oven", "finalCount"] as const;
+export type QaCheckKey = (typeof qaCheckKeys)[number];
+export type EventQaChecks = Record<QaCheckKey, boolean>;
+
+export const emptyQaChecks = (): EventQaChecks => ({
+  quantities: false,
+  starter: false,
+  shopping: false,
+  oven: false,
+  finalCount: false,
+});
+
 export type PlannerEvent = {
   id: string;
   name: string;
@@ -57,6 +69,7 @@ export type PlannerEvent = {
   starterHydration: number;
   items: EventItem[];
   schedule: ScheduleBlock[];
+  qaChecks: EventQaChecks;
   createdAt?: string;
   updatedAt?: string;
 };

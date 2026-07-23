@@ -1,4 +1,4 @@
-import { calculatePlan, formatBatches, type PlannerEvent, type PlannerSettings, type Recipe } from "@/lib/planner";
+import { calculatePlan, formatBatches, type PlannerEvent, type PlannerSettings, type Recipe } from "./planner";
 
 export type ReportSection = { title: string; rows: Array<Array<string | number>> };
 
@@ -11,7 +11,7 @@ export function buildReportSections(event: PlannerEvent, recipes: Recipe[], sett
     { title: "Shopping List", rows: [["Ingredient", "Exact grams", "Buffered grams", "Packages to buy"], ...plan.shopping.map((row) => [row.name, Math.round(row.exact), Math.round(row.buffered), row.packages ?? ""])] },
     { title: "Starter", rows: [["Build component", "Grams"], ["Build target", Math.round(plan.starterBuild.target)], ["Seed starter", Math.round(plan.starterBuild.seed)], ["Flour feed", Math.round(plan.starterBuild.flour)], ["Water feed", Math.round(plan.starterBuild.water)]] },
     { title: "Oven & Schedule", rows: [["Estimated oven hours", (plan.ovenMinutes / 60).toFixed(1)], ["Block", "Task", "Notes"], ...event.schedule.map((block) => [block.dayLabel, block.title, block.notes])] },
-    { title: "Final QA", rows: [["Check", "Status"], ["Production quantities verified", "Pending"], ["Starter build scheduled", "Pending"], ["Shopping completed", "Pending"], ["Oven sequence confirmed", "Pending"], ["Final count reconciled", "Pending"]] },
+    { title: "Final QA", rows: [["Check", "Status"], ["Production quantities verified", event.qaChecks.quantities ? "Complete" : "Pending"], ["Starter build scheduled", event.qaChecks.starter ? "Complete" : "Pending"], ["Shopping completed", event.qaChecks.shopping ? "Complete" : "Pending"], ["Oven sequence confirmed", event.qaChecks.oven ? "Complete" : "Pending"], ["Final count reconciled", event.qaChecks.finalCount ? "Complete" : "Pending"]] },
   ];
 }
 

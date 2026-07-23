@@ -122,7 +122,7 @@ function scheduleTables(section: ReportSection | undefined): GoogleDocTable[] {
 function qaTable(section: ReportSection | undefined): GoogleDocTable {
   const rows = section?.rows.slice(1) ?? [];
   return {
-    rows: rows.map((row) => ["☐", String(row[0])]),
+    rows: rows.map((row) => [String(row[1]) === "Complete" ? "☒" : "☐", String(row[0])]),
     columnWidths: [40, 440],
     alignments: ["CENTER", "START"],
     variant: "checklist",

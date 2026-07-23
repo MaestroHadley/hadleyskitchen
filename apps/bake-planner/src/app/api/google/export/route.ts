@@ -1,10 +1,12 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { decryptToken } from "@/lib/google";
 import { buildGoogleDocModel, type GoogleDocTable } from "@/lib/google-doc";
 import { getEvent } from "@/lib/planner-data";
-import { buildReportSections } from "@/lib/reports";
+import { buildEventArchiveSnapshot } from "@/lib/event-archive";
+import type { ReportSection } from "@/lib/reports";
 
 export const maxDuration = 60;
 
@@ -12,6 +14,7 @@ const payloadSchema = z.object({
   kind: z.enum(["doc", "sheet"]),
   eventId: z.string().uuid(),
   existingFileId: z.string().min(5).max(300).optional(),
+  archive: z.boolean().optional().default(false),
 });
 
 async function accessToken(refreshToken: string) {
@@ -241,7 +244,7 @@ async function appendPageBreak(fileId: string, token: string) {
   await docBatchUpdate(fileId, token, [{ insertPageBreak: { location: { index: documentEndIndex(document) - 1 } } }]);
 }
 
-async function exportDoc(title: string, sections: ReturnType<typeof buildReportSections>, token: string, existingFileId?: string) {
+async function exportDoc(title: string, sections: ReportSection[], token: string, existingFileId?: string) {
   let fileId = existingFileId;
   if (!fileId) {
     const created = await googleFetch("https://docs.googleapis.com/v1/documents", token, { method: "POST", body: JSON.stringify({ title }) });
@@ -355,7 +358,7 @@ async function exportDoc(title: string, sections: ReturnType<typeof buildReportS
   return { fileId, fileUrl: `https://docs.google.com/document/d/${fileId}/edit` };
 }
 
-async function exportSheet(title: string, sections: ReturnType<typeof buildReportSections>, token: string, existingFileId?: string) {
+async function exportSheet(title: string, sections: ReportSection[], token: string, existingFileId?: string) {
   let fileId = existingFileId;
   if (!fileId) {
     const created = await googleFetch("https://sheets.googleapis.com/v4/spreadsheets", token, { method: "POST", body: JSON.stringify({ properties: { title }, sheets: sections.map((section) => ({ properties: { title: section.title.slice(0, 80), gridProperties: { frozenRowCount: 1 } } })) }) });
@@ -397,17 +400,42 @@ export async function POST(request: Request) {
     ]);
     if (!connection) return NextResponse.json({ error: "Connect Google Drive first.", reconnect: true }, { status: 409 });
     if (!eventData) return NextResponse.json({ error: "Event not found." }, { status: 404 });
+    if (parsed.data.archive && parsed.data.existingFileId) return NextResponse.json({ error: "Archival exports must create a new copy." }, { status: 400 });
     if (parsed.data.existingFileId) {
       const { data: ownedExport } = await supabase.from("google_exports").select("id").eq("user_id", auth.user.id).eq("event_id", parsed.data.eventId).eq("kind", parsed.data.kind).eq("google_file_id", parsed.data.existingFileId).maybeSingle();
       if (!ownedExport) return NextResponse.json({ error: "That Google export does not belong to this event. Create a new copy instead." }, { status: 403 });
     }
     const token = await accessToken(decryptToken(connection.encrypted_refresh_token));
-    const sections = buildReportSections(eventData.event, eventData.recipes, eventData.settings);
-    const title = `${eventData.event.name} — ${parsed.data.kind === "doc" ? "Production Packet" : "Bake Plan"}`;
+    const snapshot = buildEventArchiveSnapshot(eventData);
+    const sections = snapshot.reportSections;
+    const archivedAt = new Date();
+    const archivedLabel = [
+      archivedAt.getFullYear(),
+      String(archivedAt.getMonth() + 1).padStart(2, "0"),
+      String(archivedAt.getDate()).padStart(2, "0"),
+    ].join(".") + `-${String(archivedAt.getHours()).padStart(2, "0")}.${String(archivedAt.getMinutes()).padStart(2, "0")}`;
+    const title = parsed.data.archive
+      ? `${eventData.event.name} — Archived ${archivedLabel}`
+      : `${eventData.event.name} — ${parsed.data.kind === "doc" ? "Production Packet" : "Bake Plan"}`;
     const exported = parsed.data.kind === "doc" ? await exportDoc(title, sections, token, parsed.data.existingFileId) : await exportSheet(title, sections, token, parsed.data.existingFileId);
     const exportedAt = new Date().toISOString();
-    await supabase.from("google_exports").insert({ user_id: auth.user.id, event_id: parsed.data.eventId, kind: parsed.data.kind, google_file_id: exported.fileId, google_file_url: exported.fileUrl, exported_at: exportedAt });
-    return NextResponse.json({ ...exported, exportedAt });
+    const { error: exportError } = await supabase.from("google_exports").insert({ user_id: auth.user.id, event_id: parsed.data.eventId, kind: parsed.data.kind, google_file_id: exported.fileId, google_file_url: exported.fileUrl, exported_at: exportedAt });
+    if (exportError) throw new Error("The Google file was created, but the planner could not record it.");
+    let receiptId: string | undefined;
+    if (parsed.data.archive) {
+      const checksum = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
+      const { data: receipt, error: receiptError } = await supabase.from("event_archive_receipts").insert({
+        user_id: auth.user.id,
+        event_id: parsed.data.eventId,
+        destination: parsed.data.kind,
+        checksum,
+        google_file_url: exported.fileUrl,
+        created_at: exportedAt,
+      }).select("id").single();
+      if (receiptError || !receipt) throw new Error("The Google file was created, but the archive receipt could not be saved.");
+      receiptId = receipt.id;
+    }
+    return NextResponse.json({ ...exported, exportedAt, receiptId });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Export failed. Your event was not changed.";
     return NextResponse.json({ error: message, reconnect: /authorization|reconnect/i.test(message) }, { status: 500 });
