@@ -22,6 +22,7 @@ type RecipeRow = {
   yield_label: string;
   oven_capacity: number | string;
   cycle_minutes: number;
+  instructions?: string;
   notes: string;
   archived_at: string | null;
   is_favorite?: boolean;
@@ -46,6 +47,7 @@ export function mapRecipe(row: RecipeRow): Recipe {
     yieldLabel: row.yield_label,
     ovenCapacity: Number(row.oven_capacity),
     cycleMinutes: row.cycle_minutes,
+    instructions: row.instructions ?? "",
     notes: row.notes,
     archivedAt: row.archived_at,
     isFavorite: row.is_favorite ?? false,

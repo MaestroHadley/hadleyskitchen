@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, ArrowDown, ArrowLeft, ArrowUp, Clock, Copy, FloppyDisk, Plus, Star, Trash } from "@phosphor-icons/react";
 import { duplicateRecipe, saveRecipe, setRecipeFlags } from "@/app/actions";
+import { formatBakeryDate } from "@/lib/date-format";
 import { recipeHydration, type Ingredient, type IngredientRole, type Recipe } from "@/lib/planner";
 
 const roles: Array<{ value: IngredientRole; label: string }> = [
@@ -17,7 +18,15 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
   const [message, setMessage] = useState("");
   const firstRender = useRef(true);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
   const hydration = useMemo(() => recipeHydration(recipe, 1), [recipe]);
+
+  useEffect(() => {
+    const title = titleRef.current;
+    if (!title) return;
+    title.style.height = "0px";
+    title.style.height = `${title.scrollHeight}px`;
+  }, [recipe.name]);
 
   useEffect(() => {
     if (firstRender.current) {
@@ -60,7 +69,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
 
   return <div className="editor-page">
     <div className="editor-toolbar"><button className="text-link" onClick={() => router.push("/recipes")}><ArrowLeft />Recipe library</button><div className={`save-indicator ${saveState}`}><i />{saveState === "saving" ? "Saving changes…" : saveState === "error" ? "Couldn’t save" : "All changes saved"}</div></div>
-    <section className="editor-header"><div><p className="eyebrow">Recipe workspace</p><input className="title-input" value={recipe.name} onChange={(event) => update("name", event.target.value)} aria-label="Recipe name" /></div><div className="button-row"><button className={recipe.isFavorite ? "compact-button favorite" : "compact-button"} onClick={() => flag({ favorite: !recipe.isFavorite })}><Star weight={recipe.isFavorite ? "fill" : "regular"} />{recipe.isFavorite ? "Favorited" : "Favorite"}</button><button className="compact-button" onClick={duplicate}><Copy />Duplicate</button><button className="compact-button" onClick={() => flag({ archived: !recipe.archivedAt })}><Archive />{recipe.archivedAt ? "Restore" : "Archive"}</button></div></section>
+    <section className="editor-header"><div><p className="eyebrow">Recipe workspace</p><textarea ref={titleRef} className="title-input" rows={1} value={recipe.name} onChange={(event) => update("name", event.target.value)} aria-label="Recipe name" /></div><div className="button-row"><button className={recipe.isFavorite ? "compact-button favorite" : "compact-button"} onClick={() => flag({ favorite: !recipe.isFavorite })}><Star weight={recipe.isFavorite ? "fill" : "regular"} />{recipe.isFavorite ? "Favorited" : "Favorite"}</button><button className="compact-button" onClick={duplicate}><Copy />Duplicate</button><button className="compact-button" onClick={() => flag({ archived: !recipe.archivedAt })}><Archive />{recipe.archivedAt ? "Restore" : "Archive"}</button></div></section>
     {message && <p className="inline-message error">{message}</p>}
     <div className="editor-grid">
       <section className="panel recipe-form-panel">
@@ -69,9 +78,10 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
         <div className="ingredient-section"><div className="section-heading"><div><p className="eyebrow">Grams only</p><h2>Ingredients</h2></div><button className="compact-button" onClick={() => update("ingredients", [...recipe.ingredients, { name: "", grams: 0, role: "other" }])}><Plus weight="bold" />Add ingredient</button></div>
           <div className="ingredient-table"><div className="ingredient-table-head"><span>Ingredient</span><span>Grams / batch</span><span>Role</span><span>Buy size</span><span /></div>{recipe.ingredients.map((ingredient, index) => <div className="ingredient-edit-row" key={`${ingredient.id ?? "new"}-${index}`}><input value={ingredient.name} onChange={(event) => updateIngredient(index, { name: event.target.value })} aria-label={`Ingredient ${index + 1} name`} placeholder="Ingredient name" /><div className="number-suffix"><input type="number" min="0" step="0.1" value={ingredient.grams} onChange={(event) => updateIngredient(index, { grams: Number(event.target.value) })} aria-label={`${ingredient.name || `Ingredient ${index + 1}`} grams`} /><span>g</span></div><select value={ingredient.role} onChange={(event) => updateIngredient(index, { role: event.target.value as IngredientRole })} aria-label={`${ingredient.name || `Ingredient ${index + 1}`} role`}>{roles.map((role) => <option value={role.value} key={role.value}>{role.label}</option>)}</select><div className="number-suffix optional"><input type="number" min="0" step="0.1" value={ingredient.packageGrams ?? ""} onChange={(event) => updateIngredient(index, { packageGrams: event.target.value ? Number(event.target.value) : undefined })} aria-label={`${ingredient.name || `Ingredient ${index + 1}`} purchase package grams`} placeholder="Optional" /><span>g</span></div><div className="row-tools"><button onClick={() => moveIngredient(index, -1)} disabled={index === 0} aria-label="Move ingredient up"><ArrowUp /></button><button onClick={() => moveIngredient(index, 1)} disabled={index === recipe.ingredients.length - 1} aria-label="Move ingredient down"><ArrowDown /></button><button className="danger-icon" onClick={() => update("ingredients", recipe.ingredients.filter((_, itemIndex) => itemIndex !== index))} aria-label="Delete ingredient"><Trash /></button></div></div>)}</div>
         </div>
+        <label className="notes-field">Instructions<textarea value={recipe.instructions ?? ""} onChange={(event) => update("instructions", event.target.value)} placeholder="Mixing, proofing, shaping, and baking steps…" /></label>
         <label className="notes-field">Recipe notes<textarea value={recipe.notes ?? ""} onChange={(event) => update("notes", event.target.value)} placeholder="Proofing notes, pan size, bake cues…" /></label>
       </section>
-      <aside className="editor-aside"><article className="mini-panel"><Clock /><div><strong>Live formula</strong><span>{recipe.ingredients.length} ingredients · {recipe.yieldPerBatch} {recipe.yieldLabel}</span></div></article><article className="panel version-panel"><p className="eyebrow">History</p><h3>Recipe versions</h3>{versions.length ? versions.map((version) => <div key={version.id}><span>Version {version.version}</span><small>{new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(new Date(version.created_at))}</small></div>) : <p className="muted">Version history begins after your first saved change.</p>}</article><button className="button primary full-width" onClick={async () => { setSaveState("saving"); const result = await saveRecipe(recipe); setSaveState(result.ok ? "saved" : "error"); if (!result.ok) setMessage(result.error); }}><FloppyDisk weight="bold" />Save now</button></aside>
+      <aside className="editor-aside"><article className="mini-panel"><Clock /><div><strong>Live formula</strong><span>{recipe.ingredients.length} ingredients · {recipe.yieldPerBatch} {recipe.yieldLabel}</span></div></article><article className="panel version-panel"><p className="eyebrow">History</p><h3>Recipe versions</h3>{versions.length ? versions.map((version) => <div key={version.id}><span>Version {version.version}</span><small>{formatBakeryDate(version.created_at, { month: "short", day: "numeric", year: "numeric" })}</small></div>) : <p className="muted">Version history begins after your first saved change.</p>}</article><button className="button primary full-width" onClick={async () => { setSaveState("saving"); const result = await saveRecipe(recipe); setSaveState(result.ok ? "saved" : "error"); if (!result.ok) setMessage(result.error); }}><FloppyDisk weight="bold" />Save now</button></aside>
     </div>
   </div>;
 }
