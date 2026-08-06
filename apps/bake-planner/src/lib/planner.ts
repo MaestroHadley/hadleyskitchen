@@ -17,6 +17,7 @@ export type Recipe = {
   yieldLabel: string;
   ovenCapacity: number;
   cycleMinutes: number;
+  instructions?: string;
   notes?: string;
   isFavorite?: boolean;
   archivedAt?: string | null;

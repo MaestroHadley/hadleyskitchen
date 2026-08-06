@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import { CreateRecipeButton } from "@/components/create-recipe-button";
 import { PageHeader } from "@/components/page-header";
 import { RecipeLibrary } from "@/components/recipe-library";
@@ -15,7 +17,7 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
   };
   const result = await listRecipes(filters);
   return <>
-    <PageHeader eyebrow="Formula library" title="Your recipes" description="Search, refine, and reuse every dependable bake formula." actions={<CreateRecipeButton />} />
+    <PageHeader eyebrow="Formula library" title="Your recipes" description="Search, refine, and reuse every dependable bake formula." actions={<><Link className="button secondary" href="/recipes/import"><UploadSimple />Import recipe</Link><CreateRecipeButton /></>} />
     <RecipeLibrary {...result} filters={filters} />
   </>;
 }

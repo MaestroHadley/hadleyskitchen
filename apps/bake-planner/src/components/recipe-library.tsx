@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, BookOpen, CaretLeft, CaretRight, MagnifyingGlass, Star } from "@phosphor-icons/react/dist/ssr";
+import { formatBakeryDate } from "@/lib/date-format";
 import type { Recipe } from "@/lib/planner";
 
 type Props = {
@@ -55,7 +56,7 @@ export function RecipeLibrary({ recipes, total, page, pageSize, filters }: Props
         <span className="recipe-name"><span className="row-icon"><BookOpen aria-hidden="true" /></span><span><strong>{recipe.name}</strong><small>{recipe.ingredients.length} ingredients</small></span>{recipe.isFavorite && <Star weight="fill" className="favorite-star" aria-label="Favorite" />}</span>
         <span><em className="category-chip">{recipe.category}</em></span>
         <span>{recipe.yieldPerBatch} {recipe.yieldLabel}</span>
-        <span>{recipe.updatedAt ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(recipe.updatedAt)) : "—"}</span>
+        <span>{recipe.updatedAt ? formatBakeryDate(recipe.updatedAt, { month: "short", day: "numeric" }) : "—"}</span>
         <span className="row-arrow"><CaretRight aria-hidden="true" /></span>
       </Link>)}
     </div> : <div className="empty-state"><span className="empty-icon"><MagnifyingGlass /></span><h2>No recipes found</h2><p>Adjust the filters or create a recipe to start your library.</p></div>}

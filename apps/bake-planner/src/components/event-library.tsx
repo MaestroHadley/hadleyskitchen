@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, ArrowRight, ArrowSquareOut, CalendarBlank, CaretLeft, CaretRight, Check, CheckCircle, FileArchive, FileDoc, GoogleDriveLogo, MagnifyingGlass, SpinnerGap, Table, WarningCircle, X } from "@phosphor-icons/react";
 import { deleteEventPermanently } from "@/app/actions";
+import { formatBakeryDate } from "@/lib/date-format";
 import type { EventSort, EventSummary, EventView } from "@/lib/event-library";
 import { googleConnectionFailureMessage } from "@/lib/google-oauth";
 
@@ -46,11 +47,11 @@ function eventDestination(event: EventSummary) {
 
 function formatEventDate(value: string | null) {
   if (!value) return "Date not set";
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  return formatBakeryDate(value, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 function formatUpdated(value: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(value));
+  return formatBakeryDate(value, { month: "short", day: "numeric" });
 }
 
 export function EventLibrary(props: Props) {

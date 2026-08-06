@@ -6,6 +6,7 @@ import { z } from "zod";
 import { sampleEvent, sampleRecipes, sampleSchedule } from "@/data/sample";
 import { getRecipe, getSessionUser, isDemoMode } from "@/lib/planner-data";
 import type { EventQaChecks, PlannerEvent, Recipe } from "@/lib/planner";
+import { AI_IMPORT_CONSENT_VERSION, confirmedRecipeImportSchema, type RecipeImportDraft } from "@/lib/recipe-import";
 
 const ingredientSchema = z.object({
   id: z.string().optional(),
@@ -23,6 +24,7 @@ const recipeSchema = z.object({
   yieldLabel: z.string().trim().min(1).max(40),
   ovenCapacity: z.number().finite().positive().max(100_000),
   cycleMinutes: z.number().int().positive().max(1440),
+  instructions: z.string().max(20_000).optional(),
   notes: z.string().max(5000).optional(),
   ingredients: z.array(ingredientSchema).min(1).max(200),
 });
@@ -62,6 +64,7 @@ export async function saveRecipe(input: Recipe): Promise<ActionResult> {
     p_yield_label: parsed.data.yieldLabel,
     p_oven_capacity: parsed.data.ovenCapacity,
     p_cycle_minutes: parsed.data.cycleMinutes,
+    p_instructions: parsed.data.instructions ?? "",
     p_notes: parsed.data.notes ?? "",
     p_ingredients: parsed.data.ingredients.map((ingredient, index) => ({ ...ingredient, sortOrder: index })),
   });
@@ -88,7 +91,7 @@ export async function duplicateRecipe(id: string): Promise<ActionResult> {
   if (isDemoMode()) return { ok: true, id: source.id };
   const { supabase, user } = await getSessionUser();
   if (!supabase || !user) return { ok: false, error: "Sign in to duplicate recipes." };
-  const { data, error } = await supabase.from("recipes").insert({ user_id: user.id, name: `${source.name} copy`, category: source.category, yield_per_batch: source.yieldPerBatch, yield_label: source.yieldLabel, oven_capacity: source.ovenCapacity, cycle_minutes: source.cycleMinutes, notes: source.notes ?? "" }).select("id").single();
+  const { data, error } = await supabase.from("recipes").insert({ user_id: user.id, name: `${source.name} copy`, category: source.category, yield_per_batch: source.yieldPerBatch, yield_label: source.yieldLabel, oven_capacity: source.ovenCapacity, cycle_minutes: source.cycleMinutes, instructions: source.instructions ?? "", notes: source.notes ?? "" }).select("id").single();
   if (error || !data) return { ok: false, error: error?.message ?? "Could not duplicate recipe." };
   await supabase.from("recipe_ingredients").insert(source.ingredients.map((ingredient, index) => ({ user_id: user.id, recipe_id: data.id, name: ingredient.name, grams: ingredient.grams, role: ingredient.role, package_grams: ingredient.packageGrams ?? null, sort_order: index })));
   revalidatePath("/recipes");
@@ -107,6 +110,58 @@ export async function setRecipeFlags(id: string, changes: { favorite?: boolean; 
   revalidatePath("/recipes");
   revalidatePath(`/recipes/${id}`);
   return { ok: true, id };
+}
+
+export async function confirmRecipeImport(input: RecipeImportDraft): Promise<ActionResult> {
+  const parsed = confirmedRecipeImportSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Review the imported recipe fields." };
+  if (parsed.data.source.processingMethod === "ai" && parsed.data.source.consentVersion !== AI_IMPORT_CONSENT_VERSION) {
+    return { ok: false, error: "The Google AI disclosure must be accepted again before saving this import." };
+  }
+  if (isDemoMode()) return { ok: true, id: "plain" };
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) return { ok: false, error: "Sign in to save imported recipes." };
+  const ingredients = parsed.data.ingredients.map((ingredient, index) => ({
+    name: ingredient.name,
+    grams: ingredient.grams,
+    role: ingredient.role,
+    packageGrams: ingredient.packageGrams,
+    sortOrder: index,
+  }));
+  const sourceSnapshot = {
+    instructions: parsed.data.instructions,
+    ingredients: parsed.data.ingredients.map((ingredient) => ({
+      sourceText: ingredient.sourceText,
+      originalQuantity: ingredient.originalQuantity,
+      originalUnit: ingredient.originalUnit,
+      conversionNote: ingredient.conversionNote,
+      confidence: ingredient.confidence,
+    })),
+  };
+  const { data, error } = await supabase.rpc("create_imported_recipe", {
+    p_name: parsed.data.name,
+    p_category: parsed.data.category,
+    p_yield_per_batch: parsed.data.yieldPerBatch,
+    p_yield_label: parsed.data.yieldLabel,
+    p_oven_capacity: parsed.data.ovenCapacity,
+    p_cycle_minutes: parsed.data.cycleMinutes,
+    p_instructions: parsed.data.instructions,
+    p_notes: parsed.data.notes,
+    p_ingredients: ingredients,
+    p_provenance: {
+      sourceType: parsed.data.source.type,
+      sourceLabel: parsed.data.source.label,
+      sourceUrl: parsed.data.source.url,
+      processingMethod: parsed.data.source.processingMethod,
+      aiModel: parsed.data.source.aiModel,
+      consentVersion: parsed.data.source.consentVersion,
+      sourceSnapshot,
+      warnings: parsed.data.warnings,
+    },
+  });
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not save the imported recipe." };
+  revalidatePath("/recipes");
+  return { ok: true, id: String(data) };
 }
 
 export async function createEvent(formData: FormData) {
@@ -218,7 +273,7 @@ export async function deleteEventPermanently(input: { eventId: string; eventName
 }
 
 async function insertRecipe(source: Recipe, userId: string, supabase: NonNullable<Awaited<ReturnType<typeof getSessionUser>>["supabase"]>) {
-  const { data, error } = await supabase.from("recipes").insert({ user_id: userId, name: source.name, category: source.category, yield_per_batch: source.yieldPerBatch, yield_label: source.yieldLabel, oven_capacity: source.ovenCapacity, cycle_minutes: source.cycleMinutes, notes: source.notes ?? "", is_favorite: source.isFavorite ?? false }).select("id").single();
+  const { data, error } = await supabase.from("recipes").insert({ user_id: userId, name: source.name, category: source.category, yield_per_batch: source.yieldPerBatch, yield_label: source.yieldLabel, oven_capacity: source.ovenCapacity, cycle_minutes: source.cycleMinutes, instructions: source.instructions ?? "", notes: source.notes ?? "", is_favorite: source.isFavorite ?? false }).select("id").single();
   if (error || !data) throw new Error(error?.message ?? "Could not add sample recipe.");
   await supabase.from("recipe_ingredients").insert(source.ingredients.map((ingredient, index) => ({ user_id: userId, recipe_id: data.id, name: ingredient.name, grams: ingredient.grams, role: ingredient.role, package_grams: ingredient.packageGrams ?? null, sort_order: index })));
   return data.id as string;

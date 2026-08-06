@@ -11,6 +11,21 @@ Mobile-first production planning for market bakers. The app stores reusable gram
 
 Without environment variables, development runs as an interactive in-memory sample. Authentication and cloud persistence remain disabled; production always requires Supabase.
 
+## Zero-cost recipe importer
+
+Guided manual recipe import is always available and never sends recipe content to an AI provider.
+
+Optional AI-assisted import uses Gemini's unpaid quota directly, without an SDK, gateway, paid OCR service, or billing account. To enable it:
+
+1. Create a Gemini API key in a Google project that has no Cloud Billing account attached.
+2. Set `RECIPE_IMPORT_AI_ENABLED=true` and provide `GEMINI_API_KEY`.
+3. Keep `GEMINI_RECIPE_IMPORT_MODEL` on a model available in the unpaid tier.
+4. Set conservative per-user and global daily limits. When either limit or Google's quota is exhausted, the AI endpoint stops and users continue with manual import.
+
+The unpaid Gemini service may use submissions and responses to improve Google products and may involve human review. The UI requires a versioned disclosure and explicit consent before every request. Uploaded files are sent inline for one request and are not retained by this app.
+
+If the free tier or its terms stop being suitable, set `RECIPE_IMPORT_AI_ENABLED=false`. Manual import and saved recipes continue to work.
+
 ## Google export setup
 
 Create a separate Google OAuth web client for Drive export. Enable Drive, Docs, and Sheets APIs; configure `/api/google/callback`; and add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a random 32+ byte `GOOGLE_TOKEN_ENCRYPTION_KEY` in Vercel. The integration uses the limited `drive.file` scope. Google sign-in remains separate and does not request Drive access.
