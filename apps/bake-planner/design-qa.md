@@ -62,6 +62,47 @@ final result: passed
 
 ---
 
+# Design QA — Hearthworks Rebrand
+
+## Source and implementation evidence
+
+- Source logo tile: `/Users/nicholashadley/Downloads/Dark HW Logo.png`
+- Source transparent mark: `/Users/nicholashadley/Downloads/HW Logo.png`
+- Source palette: `/var/folders/1f/x79y6bsn00l62vjs2cjsk1w00000gn/T/codex-clipboard-9fecc5f6-80a0-4626-9970-c521522d9d27.png`
+- Implementation assets: `public/hearthworks-logo-dark.png` and `public/hearthworks-logo.png`
+- Desktop implementation: `/Users/nicholashadley/.codex/visualizations/2026/08/07/019fdcb7-113a-7762-a016-7249834e96b7/hearthworks-studio-dashboard-v3.png`
+- Mobile implementation: `/Users/nicholashadley/.codex/visualizations/2026/08/07/019fdcb7-113a-7762-a016-7249834e96b7/hearthworks-studio-mobile-v2.png`
+- Combined source/implementation evidence: `/Users/nicholashadley/.codex/visualizations/2026/08/07/019fdcb7-113a-7762-a016-7249834e96b7/hearthworks-brand-comparison.png`
+
+## Viewports and state
+
+- Desktop: 1440 × 900 CSS pixels at density 1.
+- Mobile: 390 × 844 CSS pixels at density 1.
+- State: authenticated dashboard using Studio, with the supplied Hearthworks mark, exact byline, and final plum, sage, and porcelain tokens.
+- Mobile document metrics: `scrollWidth: 390` and `clientWidth: 390`.
+
+## Findings and iteration
+
+No actionable P0, P1, or P2 findings remain.
+
+1. The supplied dark tile placed directly on the plum product bar made the internal mark difficult to distinguish. Classified P1.
+2. Fix: use the supplied transparent Hearthworks mark on a measured porcelain tile in the product bar, while retaining the supplied dark tile as the favicon and application icon.
+3. User annotation identified the repeated notebook marks in recipe rows as looking like broken logos. Classified P2.
+4. Fix: replace those row marks with 21 × 21 Phosphor bread icons, hidden from assistive technology because the adjacent recipe text provides the accessible name.
+5. Final comparison confirms the supplied artwork and palette are represented directly, text remains legible, the desktop and mobile shells retain hierarchy, and no horizontal overflow is present.
+
+## Accessibility and behavior
+
+- Automated contrast tests cover critical semantic pairs in Studio, Garden, and Confetti at a minimum of WCAG AA 4.5:1.
+- The product byline remains visible on desktop and is intentionally hidden below 560px to keep the mobile product bar calm and unclipped.
+- All three appearance choices retain text and icon selected states, so selection is not communicated by color alone.
+- Studio uses the supplied `#312538`, `#392c41`, `#9da195`, and `#f8f2e9` palette; Garden and Confetti retain their own complementary product bars.
+- Browser console checks contained no errors or warnings.
+
+final result: passed
+
+---
+
 # Design QA — Selectable Theme System
 
 ## Comparison targets

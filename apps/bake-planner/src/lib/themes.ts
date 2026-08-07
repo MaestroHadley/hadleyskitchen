@@ -15,7 +15,7 @@ export const bakeryThemes: BakeryTheme[] = [
   {
     id: "studio",
     name: "Studio",
-    description: "Warm, focused, and business-forward.",
+    description: "Hearthworks plum, sage, and porcelain.",
     decorativeAccents: "none",
   },
   {

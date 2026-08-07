@@ -24,17 +24,17 @@ describe("bakery themes", () => {
   it("keeps every theme's critical text combinations at WCAG AA contrast", () => {
     const pairs = {
       studio: [
-        ["#fffdf9", "#27231f"],
-        ["#cec5ba", "#27231f"],
-        ["#26231f", "#f7f3eb"],
-        ["#6e675f", "#fffdf9"],
-        ["#ffffff", "#a85432"],
-        ["#ffffff", "#8e4429"],
-        ["#8e4429", "#f3ddd0"],
-        ["#ffffff", "#743645"],
-        ["#efdbe0", "#743645"],
-        ["#50684d", "#e3eadf"],
-        ["#a13f3f", "#fae8e6"],
+        ["#fffdf8", "#312538"],
+        ["#9da195", "#312538"],
+        ["#312538", "#f8f2e9"],
+        ["#665e69", "#fffdf8"],
+        ["#f8f2e9", "#392c41"],
+        ["#f8f2e9", "#312538"],
+        ["#392c41", "#ebe5ed"],
+        ["#fffdf8", "#596054"],
+        ["#e4e7de", "#596054"],
+        ["#56614f", "#e2e7de"],
+        ["#963f49", "#f7e7e8"],
       ],
       garden: [
         ["#fffefb", "#3f5037"],
