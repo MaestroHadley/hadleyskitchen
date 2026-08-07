@@ -1,12 +1,13 @@
 import crypto from "node:crypto";
 
-// `drive.file` grants access only to files the planner creates or the user
-// explicitly opens with it. Both the Docs and Sheets APIs accept this scope,
-// so broader document-wide scopes are unnecessary.
-const scopes = "https://www.googleapis.com/auth/drive.file";
+// `drive.file` limits file access to files the planner creates or the user
+// explicitly opens with it. OpenID email identifies the Google account that
+// granted that access so the owner is visible before an export is created.
+const scopes = "openid email https://www.googleapis.com/auth/drive.file";
 
-export function googleAuthorizationUrl(origin: string, state: string) {
-  const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: `${origin}/api/google/callback`, response_type: "code", scope: scopes, access_type: "offline", prompt: "consent", state });
+export function googleAuthorizationUrl(origin: string, state: string, loginHint?: string) {
+  const params = new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID ?? "", redirect_uri: `${origin}/api/google/callback`, response_type: "code", scope: scopes, access_type: "offline", prompt: "consent select_account", state });
+  if (loginHint) params.set("login_hint", loginHint);
   return `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
 

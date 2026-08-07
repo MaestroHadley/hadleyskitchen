@@ -1,13 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { encryptToken } from "@/lib/google";
-import type { GoogleConnectionFailureReason } from "@/lib/google-oauth";
+import { googleEmailsMatch, type GoogleConnectionFailureReason } from "@/lib/google-oauth";
 
 type GoogleTokenResponse = {
   error?: string;
   error_description?: string;
+  access_token?: string;
   refresh_token?: string;
   scope?: string;
+};
+
+type GoogleUserInfo = {
+  sub?: string;
+  email?: string;
+  email_verified?: boolean;
 };
 
 function callbackResponse(request: NextRequest, returnTo: string, status: "connected" | "failed", reason?: GoogleConnectionFailureReason) {
@@ -65,11 +72,37 @@ export async function GET(request: NextRequest) {
     console.error("Google Drive OAuth response omitted refresh token", { hasScope: Boolean(tokens.scope) });
     return callbackResponse(request, returnTo, "failed", "refresh_token");
   }
+  if (!tokens.access_token) return callbackResponse(request, returnTo, "failed", "identity");
+
+  let googleIdentity: GoogleUserInfo;
+  try {
+    const identityResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
+      headers: { authorization: `Bearer ${tokens.access_token}` },
+    });
+    googleIdentity = await identityResponse.json().catch(() => ({})) as GoogleUserInfo;
+    if (!identityResponse.ok || !googleIdentity.sub || !googleIdentity.email || googleIdentity.email_verified === false) {
+      console.error("Google Drive account identity lookup failed", {
+        status: identityResponse.status,
+        hasSubject: Boolean(googleIdentity.sub),
+        hasEmail: Boolean(googleIdentity.email),
+      });
+      return callbackResponse(request, returnTo, "failed", "identity");
+    }
+  } catch (error) {
+    console.error("Google Drive account identity request failed", { message: error instanceof Error ? error.message : "Unknown request error" });
+    return callbackResponse(request, returnTo, "failed", "identity");
+  }
+
+  if (data.user.app_metadata.provider === "google" && !googleEmailsMatch(data.user.email, googleIdentity.email)) {
+    return callbackResponse(request, returnTo, "failed", "account_mismatch");
+  }
 
   const { error: storageError } = await supabase.from("google_connections").upsert({
     user_id: data.user.id,
     encrypted_refresh_token: encryptToken(tokens.refresh_token),
     scopes: tokens.scope?.split(" ") ?? [],
+    google_account_id: googleIdentity.sub,
+    google_email: googleIdentity.email,
     connected_at: new Date().toISOString(),
   }, { onConflict: "user_id" });
   if (storageError) {

@@ -31,6 +31,8 @@ const roles: Array<{ value: IngredientRole; label: string }> = [
   { value: "other", label: "Other" },
 ];
 
+const NEW_CATEGORY = "__new_category__";
+
 function ingredientsFromPaste(value: string): Ingredient[] {
   return parseIngredientLines(value).map((ingredient) => ({
     name: ingredient.name,
@@ -39,7 +41,7 @@ function ingredientsFromPaste(value: string): Ingredient[] {
   }));
 }
 
-export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recipe; versions: Array<{ id: string; version: number; created_at: string }> }) {
+export function RecipeEditor({ initialRecipe, versions, categories }: { initialRecipe: Recipe; versions: Array<{ id: string; version: number; created_at: string }>; categories: string[] }) {
   const router = useRouter();
   const [savedRecipe, setSavedRecipe] = useState(initialRecipe);
   const [recipe, setRecipe] = useState(initialRecipe);
@@ -50,6 +52,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
   const [pasteText, setPasteText] = useState("");
   const [newIngredientName, setNewIngredientName] = useState("");
   const [newIngredientGrams, setNewIngredientGrams] = useState("");
+  const [addingCategory, setAddingCategory] = useState(false);
 
   const hydration = useMemo(() => recipeHydration(recipe, 1), [recipe]);
   const hasHydrationFormula = recipe.ingredients.some((ingredient) => ingredient.role === "flour")
@@ -57,6 +60,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
   const totalGrams = useMemo(() => recipe.ingredients.reduce((sum, ingredient) => sum + ingredient.grams, 0), [recipe.ingredients]);
   const pastedIngredients = useMemo(() => ingredientsFromPaste(pasteText), [pasteText]);
   const pastedMissing = useMemo(() => parseIngredientLines(pasteText).filter((ingredient) => ingredient.grams === null).length, [pasteText]);
+  const categoryOptions = useMemo(() => [...new Set([...categories, savedRecipe.category].filter(Boolean))].sort((a, b) => a.localeCompare(b)), [categories, savedRecipe.category]);
 
   const changeRecipe = (change: (current: Recipe) => Recipe) => {
     setMessage("");
@@ -85,6 +89,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
 
   function beginEditing() {
     setRecipe(savedRecipe);
+    setAddingCategory(false);
     setMessage("");
     setSaveState("saved");
     setIsEditing(true);
@@ -92,6 +97,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
 
   function cancelEditing() {
     setRecipe(savedRecipe);
+    setAddingCategory(false);
     setPasteOpen(false);
     setPasteText("");
     setNewIngredientName("");
@@ -111,6 +117,7 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
       return;
     }
     setSavedRecipe(recipe);
+    setAddingCategory(false);
     setSaveState("saved");
     setPasteOpen(false);
     setPasteText("");
@@ -233,7 +240,15 @@ export function RecipeEditor({ initialRecipe, versions }: { initialRecipe: Recip
       <label className="recipe-name-field"><span>Recipe name</span><input value={recipe.name} onChange={(event) => update("name", event.target.value)} /></label>
 
       <div className="recipe-detail-grid">
-        <label><span>Category</span><input value={recipe.category} onChange={(event) => update("category", event.target.value)} /></label>
+        <label className="category-field"><span>Category</span><select value={addingCategory ? NEW_CATEGORY : recipe.category} onChange={(event) => {
+          if (event.target.value === NEW_CATEGORY) {
+            setAddingCategory(true);
+            update("category", "");
+          } else {
+            setAddingCategory(false);
+            update("category", event.target.value);
+          }
+        }}><option value={NEW_CATEGORY}>+ Add new category…</option>{categoryOptions.map((category) => <option value={category} key={category}>{category}</option>)}</select>{addingCategory && <input value={recipe.category} onChange={(event) => update("category", event.target.value)} placeholder="New category name" aria-label="New category name" autoFocus />}</label>
         <label><span>Batch yield</span><input type="number" min="0.01" step="0.01" value={recipe.yieldPerBatch} onChange={(event) => update("yieldPerBatch", Number(event.target.value))} /></label>
         <label><span>Yield unit</span><input value={recipe.yieldLabel} onChange={(event) => update("yieldLabel", event.target.value)} /></label>
         <label><span>Oven capacity</span><input type="number" min="1" step="1" value={recipe.ovenCapacity} onChange={(event) => update("ovenCapacity", Number(event.target.value))} /></label>
