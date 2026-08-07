@@ -1,18 +1,28 @@
-# Hadley's Kitchen
+# Hadley's Kitchen Repository
 
-Marketing site for Hadley's Kitchen, rebuilt in Next.js for Vercel deployment.
+This repository contains two independently deployed Next.js applications.
 
-## Local development
+| Application | Path | Production domain |
+|---|---|---|
+| Hadley's Kitchen website | `apps/website` | `hadleyskitchen.com` |
+| Hearthworks platform | `apps/platform` | `app.hadleyskitchen.com` |
 
-```bash
-npm install
-npm run dev
+Each application owns its dependencies and lockfile. The repository intentionally does not use npm workspaces or a shared build system.
+
+## Commands
+
+Run application commands from the repository root:
+
+```sh
+npm run dev:website
+npm run build:website
+npm run lint:website
+
+npm run dev:platform
+npm run build:platform
+npm run typecheck:platform
+npm run test:platform
+npm run lint:platform
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-## Content updates
-
-Shared copy and links live in `src/content/site.ts`.
-
-Update `orderUrl` there when the external ordering platform is finalized.
+Architecture, product planning, and migration records live in `docs/platform`.
