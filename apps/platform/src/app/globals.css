@@ -143,8 +143,9 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-html, body { margin: 0; min-height: 100%; background: var(--cream); color: var(--ink); font-family: var(--font-body), system-ui, sans-serif; }
+html { width: 100%; max-width: 100%; overflow-x: hidden; scroll-behavior: smooth; }
+html, body { width: 100%; max-width: 100%; margin: 0; min-height: 100%; overflow-x: hidden; background: var(--cream); color: var(--ink); font-family: var(--font-body), system-ui, sans-serif; }
+@supports (overflow: clip) { html, body { overflow-x: clip; } }
 body { line-height: 1.45; }
 button, input, select, textarea { font: inherit; }
 button, a { color: inherit; }
@@ -153,7 +154,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 input, select, textarea { width: 100%; min-width: 0; max-width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--paper); color: var(--ink); }
 textarea { min-height: 112px; resize: vertical; }
 input::placeholder, textarea::placeholder { color: var(--color-text-muted); opacity: 1; }
-input[type="datetime-local"] { min-inline-size: 0; max-inline-size: 100%; }
+input[type="datetime-local"] { display: block; inline-size: 100%; min-inline-size: 0; max-inline-size: 100%; }
 input[type="datetime-local"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
 
 .app-shell { position: relative; isolation: isolate; min-height: 100vh; display: grid; grid-template: 76px 1fr / 232px minmax(0, 1fr); grid-template-areas: "top top" "side main"; background: var(--cream); }
@@ -284,6 +285,9 @@ input[type="datetime-local"]::-webkit-date-and-time-value { min-width: 0; text-a
 
 .library-toolbar { display: grid; grid-template-columns: minmax(260px, 1fr) 190px 190px; gap: 10px; margin-bottom: 14px; }
 .search-field, .input-with-icon { position: relative; width: 100%; min-width: 0; max-width: 100%; }
+.input-with-icon { contain: inline-size; min-height: 46px; overflow: hidden; border-radius: var(--radius-control); }
+.input-with-icon:has(input[type="datetime-local"]) svg { z-index: 1; }
+.input-with-icon input[type="datetime-local"] { position: absolute; inset: 0; block-size: 100%; inline-size: 100%; min-inline-size: 0; max-inline-size: none; }
 .search-field svg, .input-with-icon svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .search-field input, .input-with-icon input { padding-left: 41px; }
 .library-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }

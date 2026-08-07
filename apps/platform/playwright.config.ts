@@ -30,7 +30,13 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      grepInvert: /iOS WebKit/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "webkit-iphone",
+      grep: /iOS WebKit/,
+      use: { ...devices["iPhone 13"] },
     },
   ],
 });

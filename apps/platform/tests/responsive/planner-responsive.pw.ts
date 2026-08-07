@@ -137,6 +137,22 @@ test("date-time and suffix controls remain inside their wrappers", async ({ page
   await expectResponsiveContainment(page);
 });
 
+test("iOS WebKit date-time control cannot create horizontal page drag", async ({ page }) => {
+  await openPlanStep(page, 1);
+  const dateWrapper = page.locator(".input-with-icon").filter({ has: page.locator('input[type="datetime-local"]') });
+  const dateInput = dateWrapper.locator('input[type="datetime-local"]');
+  const [wrapperBox, inputBox] = await Promise.all([dateWrapper.boundingBox(), dateInput.boundingBox()]);
+  expect(wrapperBox).not.toBeNull();
+  expect(inputBox).not.toBeNull();
+  expect(inputBox!.x).toBeGreaterThanOrEqual(wrapperBox!.x);
+  expect(inputBox!.x + inputBox!.width).toBeLessThanOrEqual(wrapperBox!.x + wrapperBox!.width + 1);
+  await expectResponsiveContainment(page);
+
+  await page.evaluate(() => window.scrollTo({ left: 100, behavior: "instant" }));
+  await page.waitForTimeout(50);
+  expect(await page.evaluate(() => window.scrollX)).toBe(0);
+});
+
 for (const viewport of [{ width: 390, height: 844 }, { width: 768, height: 1024 }]) {
   test.describe(`${viewport.width}px visual baselines`, () => {
     test.use({ viewport });
