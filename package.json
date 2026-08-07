@@ -1,24 +1,14 @@
 {
-  "name": "hadleyskitchen",
-  "version": "0.1.0",
+  "name": "hadleys-kitchen-monorepo",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "typescript": "^5"
+    "dev:website": "npm --prefix apps/website run dev",
+    "build:website": "npm --prefix apps/website run build",
+    "lint:website": "npm --prefix apps/website run lint",
+    "dev:platform": "npm --prefix apps/platform run dev",
+    "build:platform": "npm --prefix apps/platform run build",
+    "lint:platform": "npm --prefix apps/platform run lint",
+    "test:platform": "npm --prefix apps/platform test",
+    "typecheck:platform": "npm --prefix apps/platform run typecheck"
   }
 }

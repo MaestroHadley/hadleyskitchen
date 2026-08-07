@@ -34,13 +34,13 @@ Create a separate Google OAuth web client for Drive export. Enable Drive, Docs, 
 
 ## Vercel
 
-Create a second Vercel project from this repository with Root Directory `apps/bake-planner`, then attach `app.hadleyskitchen.com`. Configure environment variables separately from the public bakery site. Use only the canonical `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names in every deployment environment.
+The `hadleys-bake-planner` Vercel project uses Root Directory `apps/platform` and serves `app.hadleyskitchen.com`. Configure environment variables separately from the public bakery site. Use only the canonical `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` names in every deployment environment.
 
 ## Checks
 
 ```sh
-npm test
-npm run typecheck
-npm run lint
 npm run build
+npm run typecheck
+npm test
+npm run lint
 ```

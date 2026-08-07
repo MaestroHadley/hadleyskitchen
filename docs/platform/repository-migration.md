@@ -1,8 +1,8 @@
 # Repository Reorganization Migration Map
 
-Status: planning only — no application directories or Vercel settings have been moved yet.
+Status: local move complete — Vercel Root Directory cutover and preview/production verification pending.
 
-Date: August 6, 2026
+Date: August 6, 2026; local move completed August 7, 2026
 
 ## Objective
 
@@ -27,12 +27,25 @@ hadleys-kitchen/
 
 Both Vercel projects use the GitHub repository `MaestroHadley/hadleyskitchen` and currently deploy the same `main` commit independently.
 
-| Application | Vercel project | Current production domains | Current root | Target root |
+| Application | Vercel project | Production domains | Pre-move root | Repository root after this change |
 |---|---|---|---|---|
 | Public bakery website | `hadleyskitchen` | `hadleyskitchen.com`, `www.hadleyskitchen.com` | repository root | `apps/website` |
 | Microbakery application | `hadleys-bake-planner` | `app.hadleyskitchen.com` | `apps/bake-planner` | `apps/platform` |
 
-The current deployment connector confirms both projects, domains, Node.js 24.x, Git repository, and READY production deployments. The connector does not expose the `rootDirectory` property directly; the current platform root is also documented in `apps/bake-planner/README.md` and is proven by the deployed route set.
+The deployment connector confirms both projects, domains, Node.js 24.x, Git repository, and READY production deployments from merged commit `2c37bab`. It does not expose or update the `rootDirectory` property, so the two Vercel project settings must be changed before this branch is pushed for preview.
+
+## Local completion record — August 7, 2026
+
+- Moved the public application into `apps/website` and the operational application into `apps/platform`.
+- Moved platform documentation into `docs/platform` and added a concise architecture index.
+- Added a lightweight root command dispatcher without workspaces or shared dependency resolution.
+- Preserved the public website's existing Vercel Analytics dependency during the move.
+- Renamed both application packages without changing dependency versions.
+- Completed clean independent installs and production builds; lint passed for both applications, and the platform passed 45 tests plus typecheck.
+- Verified both applications at 390 × 844 with no horizontal overflow.
+- Reconciled timestamped migration filenames with production Supabase history.
+
+The deployment cutover remains intentionally incomplete until both Vercel Root Directory settings are updated and independent previews pass.
 
 No domains, OAuth callback URLs, Supabase URLs, Google redirect URLs, or customer-facing routes need to change during this repository move.
 
