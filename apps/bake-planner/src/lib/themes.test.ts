@@ -24,6 +24,8 @@ describe("bakery themes", () => {
   it("keeps every theme's critical text combinations at WCAG AA contrast", () => {
     const pairs = {
       studio: [
+        ["#fffdf9", "#27231f"],
+        ["#cec5ba", "#27231f"],
         ["#26231f", "#f7f3eb"],
         ["#6e675f", "#fffdf9"],
         ["#ffffff", "#a85432"],
@@ -35,6 +37,8 @@ describe("bakery themes", () => {
         ["#a13f3f", "#fae8e6"],
       ],
       garden: [
+        ["#fffefb", "#3f5037"],
+        ["#dce3d4", "#3f5037"],
         ["#25261f", "#faf8f1"],
         ["#66685d", "#fffefb"],
         ["#ffffff", "#657b4c"],
@@ -45,6 +49,8 @@ describe("bakery themes", () => {
         ["#9f4545", "#f8e9e7"],
       ],
       confetti: [
+        ["#fffdf8", "#284f72"],
+        ["#d7e3ec", "#284f72"],
         ["#24272b", "#fbf8f1"],
         ["#626a72", "#fffdf8"],
         ["#ffffff", "#356fa5"],

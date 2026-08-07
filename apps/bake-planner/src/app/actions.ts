@@ -320,8 +320,13 @@ export async function saveAppearance(formData: FormData) {
   if (isDemoMode()) redirect(`/account?appearance=${themeId}`);
   const { supabase, user } = await getSessionUser();
   if (!supabase || !user) redirect("/?auth=required");
-  const { error } = await supabase.from("profiles").update({ theme_id: themeId, updated_at: new Date().toISOString() }).eq("user_id", user.id);
-  if (error) redirect("/account?appearanceError=save");
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ theme_id: themeId, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .select("theme_id")
+    .maybeSingle();
+  if (error || data?.theme_id !== themeId) redirect("/account?appearanceError=save");
   revalidatePath("/", "layout");
   redirect(`/account?appearance=${themeId}`);
 }
