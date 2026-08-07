@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import { bakeryThemes, DEFAULT_THEME_ID, isThemeId, resolveThemeId, THEME_IDS } from "./themes";
+
+describe("bakery themes", () => {
+  it("defines complete metadata for every supported theme", () => {
+    expect(bakeryThemes.map((theme) => theme.id)).toEqual(THEME_IDS);
+    for (const theme of bakeryThemes) {
+      expect(theme.name.length).toBeGreaterThan(0);
+      expect(theme.description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("accepts only supported theme ids", () => {
+    expect(isThemeId("garden")).toBe(true);
+    expect(isThemeId("midnight")).toBe(false);
+    expect(isThemeId(null)).toBe(false);
+  });
+
+  it("falls back safely to Studio", () => {
+    expect(resolveThemeId(undefined)).toBe(DEFAULT_THEME_ID);
+    expect(resolveThemeId("midnight")).toBe(DEFAULT_THEME_ID);
+  });
+
+  it("keeps every theme's critical text combinations at WCAG AA contrast", () => {
+    const pairs = {
+      studio: [
+        ["#26231f", "#f7f3eb"],
+        ["#6e675f", "#fffdf9"],
+        ["#ffffff", "#a85432"],
+        ["#ffffff", "#8e4429"],
+        ["#8e4429", "#f3ddd0"],
+        ["#ffffff", "#743645"],
+        ["#efdbe0", "#743645"],
+        ["#50684d", "#e3eadf"],
+        ["#a13f3f", "#fae8e6"],
+      ],
+      garden: [
+        ["#25261f", "#faf8f1"],
+        ["#66685d", "#fffefb"],
+        ["#ffffff", "#657b4c"],
+        ["#ffffff", "#53663e"],
+        ["#53663e", "#e5eadb"],
+        ["#ffffff", "#9a6b20"],
+        ["#557052", "#e5ecdf"],
+        ["#9f4545", "#f8e9e7"],
+      ],
+      confetti: [
+        ["#24272b", "#fbf8f1"],
+        ["#626a72", "#fffdf8"],
+        ["#ffffff", "#356fa5"],
+        ["#ffffff", "#2c5e8c"],
+        ["#2c5e8c", "#e0edf6"],
+        ["#ffffff", "#984929"],
+        ["#496b4a", "#e1ebdf"],
+        ["#a34040", "#f8e7e5"],
+      ],
+    } as const;
+
+    for (const themePairs of Object.values(pairs)) {
+      for (const [foreground, background] of themePairs) {
+        expect(contrastRatio(foreground, background)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
+
+function contrastRatio(foreground: string, background: string) {
+  const foregroundLuminance = relativeLuminance(foreground);
+  const backgroundLuminance = relativeLuminance(background);
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance(hex: string) {
+  const channels = hex.match(/[\da-f]{2}/gi)?.map((channel) => Number.parseInt(channel, 16) / 255) ?? [];
+  const [red = 0, green = 0, blue = 0] = channels.map((channel) =>
+    channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+  );
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}

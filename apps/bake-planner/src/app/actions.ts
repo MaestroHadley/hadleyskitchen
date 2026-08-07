@@ -7,6 +7,7 @@ import { sampleEvent, sampleRecipes, sampleSchedule } from "@/data/sample";
 import { getRecipe, getSessionUser, isDemoMode } from "@/lib/planner-data";
 import type { EventQaChecks, PlannerEvent, Recipe } from "@/lib/planner";
 import { AI_IMPORT_CONSENT_VERSION, confirmedRecipeImportSchema, type RecipeImportDraft } from "@/lib/recipe-import";
+import { isThemeId } from "@/lib/themes";
 
 const ingredientSchema = z.object({
   id: z.string().optional(),
@@ -311,4 +312,16 @@ export async function savePlannerSettings(formData: FormData) {
   ]);
   revalidatePath("/account");
   redirect("/account?saved=1");
+}
+
+export async function saveAppearance(formData: FormData) {
+  const themeId = formData.get("themeId");
+  if (!isThemeId(themeId)) redirect("/account?appearanceError=invalid");
+  if (isDemoMode()) redirect(`/account?appearance=${themeId}`);
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) redirect("/?auth=required");
+  const { error } = await supabase.from("profiles").update({ theme_id: themeId, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+  if (error) redirect("/account?appearanceError=save");
+  revalidatePath("/", "layout");
+  redirect(`/account?appearance=${themeId}`);
 }
