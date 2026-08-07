@@ -78,7 +78,7 @@ export async function fetchPublicRecipePage(value: string) {
       redirect: "manual",
       headers: {
         Accept: "text/html,application/xhtml+xml,application/ld+json,text/plain;q=0.8",
-        "User-Agent": "HadleysKitchenRecipeImporter/1.0",
+        "User-Agent": "HearthworksRecipeImporter/1.0",
       },
       signal: AbortSignal.timeout(10_000),
     });

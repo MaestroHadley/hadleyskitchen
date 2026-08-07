@@ -1,6 +1,6 @@
-# HK Microbakery App Theme System
+# Hearthworks Theme System
 
-This file is the persistent visual and implementation brief for future design and coding work on the HK microbakery operating system. New screens should follow this contract unless a later product decision explicitly replaces it.
+This file is the persistent visual and implementation brief for Hearthworks, the operating system for independent bakers. New screens should follow this contract unless a later product decision explicitly replaces it.
 
 ## Product and brand direction
 
@@ -14,15 +14,15 @@ The intended balance is:
 - Efficient for experienced bakers working under time pressure
 - Neutral enough that each bakery feels like its own business
 
-Do not make every subscriber feel as though they are operating inside Hadley’s Kitchen. The active bakery/workspace identity should be more prominent than the software maker identity.
+Do not make every subscriber feel as though they are operating inside someone else’s bakery. The bakery/workspace identity remains visible in account and workspace context while Hearthworks owns the product chrome.
 
-Use one of these brand structures:
+The final product identity is:
 
-1. **Bakehouse OS** — `by Hadley’s Kitchen`
-2. **Proofline** — `Crafted by Hadley’s Kitchen`
-3. **Batchwell** — `From the makers of Hadley’s Kitchen`
+- **Name:** Hearthworks
+- **Byline:** `The operating system for independent bakers`
+- **Core palette:** Hearth plum `#312538`, hearth sage `#9da195`, porcelain `#f8f2e9`, and deep plum `#392c41`
 
-These are working names, not final trademark decisions. Until a final name is selected, code should not tightly couple routes, table names, or domain logic to any one working brand.
+Keep routes, table names, archive schema identifiers, and domain logic decoupled from the display brand so future identity changes do not become data migrations.
 
 ## Theme model
 
@@ -52,12 +52,12 @@ Recommended initial themes:
 
 ### Studio
 
-Neutral and business-forward, with restrained HK warmth.
+Hearthworks’ flagship theme: composed, business-forward, and quietly warm.
 
-- Warm white background
-- Soft charcoal navigation
-- Oat and taupe surfaces
-- Muted copper or terracotta primary accent
+- Porcelain `#f8f2e9` background
+- Hearth plum `#312538` product navigation
+- Sage `#9da195` supporting brand accents
+- Deep plum `#392c41` primary actions and editorial details
 - Editorial serif for major headings only
 - Humanist sans-serif for all operational UI
 - Minimal decoration
@@ -143,7 +143,7 @@ Whimsy does not belong in:
 
 ### Bakery ownership
 
-The bakery identity should be visible in the workspace selector or top bar, for example `Juniper Bread Co.`. The product brand and HK endorsement should be visually secondary.
+The bakery identity should be visible in account and workspace context, for example `Juniper Bread Co.`. Hearthworks remains the stable product identity in the top bar.
 
 ## Core screen pattern
 
@@ -180,8 +180,8 @@ Use semantic HTML before adding ARIA.
 <div className="app-shell" data-theme={theme}>
   <header className="product-bar">
     <a className="product-brand" href="/dashboard" aria-label="Product home">
-      <span className="product-name">Batchwell</span>
-      <span className="maker-mark">From the makers of Hadley’s Kitchen</span>
+      <span className="product-name">Hearthworks</span>
+      <span className="maker-mark">The operating system for independent bakers</span>
     </a>
 
     <button className="workspace-switcher" type="button">
@@ -248,18 +248,18 @@ Store theme differences in CSS custom properties. Components should consume sema
 ```css
 :root,
 [data-theme="studio"] {
-  --color-canvas: #f7f3eb;
-  --color-surface: #fffdf9;
-  --color-surface-subtle: #eee7dc;
-  --color-text: #26231f;
-  --color-text-muted: #6e675f;
-  --color-border: #d8d0c4;
-  --color-primary: #a85432;
-  --color-primary-hover: #8e4429;
-  --color-primary-text: #ffffff;
-  --color-success: #557052;
-  --color-warning: #9a671f;
-  --color-danger: #a13f3f;
+  --color-canvas: #f8f2e9;
+  --color-surface: #fffdf8;
+  --color-surface-subtle: #e9e9e2;
+  --color-text: #312538;
+  --color-text-muted: #665e69;
+  --color-border: #d4d0ca;
+  --color-primary: #392c41;
+  --color-primary-hover: #312538;
+  --color-primary-text: #f8f2e9;
+  --color-success: #56614f;
+  --color-warning: #8a631b;
+  --color-danger: #963f49;
   --radius-control: 10px;
   --radius-surface: 12px;
   --font-heading: var(--font-editorial-serif);
@@ -433,7 +433,7 @@ When designing or implementing future screens:
 
 - Read this file before making visual decisions.
 - Preserve the neutral multi-bakery brand architecture.
-- Keep HK visible as the maker or endorsement rather than the active bakery.
+- Keep Hearthworks stable as the product identity while preserving the active bakery’s name in workspace and account context.
 - Do not equate the target audience with stereotypical colors or decoration.
 - Balance friendly personality with operational credibility.
 - Reuse the established information architecture across every theme.

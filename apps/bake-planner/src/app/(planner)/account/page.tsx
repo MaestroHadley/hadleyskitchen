@@ -11,7 +11,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const { supabase, user } = await getSessionUser();
   const settings = await getSettings();
-  let bakeryName = "Hadley’s Kitchen";
+  let bakeryName = "My Bakery";
   let themeId = resolveThemeId(params.appearance);
   if (!isDemoMode() && supabase && user) {
     const { data } = await supabase.from("profiles").select("bakery_name, theme_id").eq("user_id", user.id).maybeSingle();

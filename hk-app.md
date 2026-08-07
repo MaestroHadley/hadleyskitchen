@@ -1,12 +1,14 @@
-# HK Microbakery Operating System
+# Hearthworks Product and Implementation Plan
 
 **Status:** Product and implementation plan
-**Last refined:** August 6, 2026
+**Last refined:** August 7, 2026
 **Current application:** `apps/bake-planner` at `app.hadleyskitchen.com`
+**Product name:** Hearthworks
+**Byline:** The operating system for independent bakers
 
 ## 1. Product vision
 
-Grow the existing Hadley's Kitchen Bake Planner into an all-in-one operating system for microbakeries.
+Grow the existing Hadley's Kitchen Bake Planner into Hearthworks, an all-in-one operating system for independent bakers.
 
 > Know what to sell, what to bake, what to buy, and whether the market was profitable.
 
@@ -42,7 +44,7 @@ The central advantage is not merely having a storefront or POS. Every paid order
 
 - Each bakery owns its customer relationships, recipes, media, payment account, reader, and payouts.
 - The bakery remains merchant of record for its sales.
-- HK never stores raw card data and does not become a payment processor.
+- Hearthworks never stores raw card data and does not become a payment processor.
 - Provider connections are removable and data exports remain available.
 
 ### Privacy is intentional
@@ -50,7 +52,7 @@ The central advantage is not merely having a storefront or POS. Every paid order
 - R2 stores public product media only; it does not store receipts or private bookkeeping documents.
 - Receipt images and reporting artifacts live in the bakery's own Google Drive.
 - Proprietary recipes always have a private, non-AI workflow.
-- HK stores only the Google file identifiers and metadata required to associate a receipt with an expense.
+- Hearthworks stores only the Google file identifiers and metadata required to associate a receipt with an expense.
 - Every tenant-owned table is protected by explicit authorization and row-level security.
 
 ## 3. Who the product is for
@@ -179,12 +181,12 @@ An LLM may normalize free-text answers such as "the big KitchenAid Pro" into lik
 - Production schedule remains editable and grounded in real kitchen workflow
 - Finalization produces a stable production packet while preserving traceability to orders
 
-### 6.7 HK-native POS
+### 6.7 Hearthworks-native POS
 
-- Market-specific product grid inside HK
+- Market-specific product grid inside Hearthworks
 - Fast cart, quantity changes, discounts, tips, tax, cash, and card tender
 - User-owned smart terminal receives the payment request
-- Provider returns verified status to HK
+- Provider returns verified status to Hearthworks
 - Successful sales reduce event inventory and update fulfillment/results
 - Declines, cancellations, timeouts, retries, refunds, and duplicate webhook delivery are handled safely
 - Cash and manual payments work even when a card provider is not connected
@@ -205,14 +207,14 @@ An LLM may normalize free-text answers such as "the big KitchenAid Pro" into lik
 
 - Guided expense entry with vendor, date, amount, category, tax treatment label, event association, notes, and receipt photo
 - Receipt upload is available only after the bakery connects Google Drive
-- Receipt files are created directly in an HK-managed folder in the bakery's Google Drive; HK does not persist a copy in R2, Supabase, or another HK-owned object store
+- Receipt files are created directly in a Hearthworks-managed folder in the bakery's Google Drive; Hearthworks does not persist a copy in R2, Supabase, or another Hearthworks-owned object store
 - Supabase stores the expense record plus the Google file ID, Drive URL, MIME type, upload status, and ownership metadata—not the receipt bytes
 - Monthly and event reports generated from Supabase records
 - Native Google Sheets exports for bookkeeping and analysis
 - Google Drive exports for recipes, recipe collections, production packets, event reports, archives, and generated documents
-- Exported files remain in the bakery's own Drive and can be organized into HK-created folders
+- Exported files remain in the bakery's own Drive and can be organized into Hearthworks-created folders
 - Google Sheets remain exports/reporting surfaces, not a second editable operational database
-- Re-export creates a new snapshot or explicitly refreshes an HK-owned export; it does not silently import arbitrary spreadsheet edits
+- Re-export creates a new snapshot or explicitly refreshes a Hearthworks-owned export; it does not silently import arbitrary spreadsheet edits
 
 ### 6.10 Customers and communications
 
@@ -310,7 +312,7 @@ Implementation requirements:
 
 Google authentication for app login remains separate from permission to create exports. Request Drive/Docs/Sheets access only when the baker connects Google exports.
 
-Use the narrow `drive.file` model so HK manages files it creates rather than requesting broad Drive access.
+Use the narrow `drive.file` model so Hearthworks manages files it creates rather than requesting broad Drive access.
 
 Google Drive is the user-owned destination for generated artifacts, including:
 
@@ -324,10 +326,10 @@ Google Drive is the user-owned destination for generated artifacts, including:
 
 R2 and Drive have different responsibilities. R2 holds public product media. Drive holds every receipt plus user-requested exports and portable business records. Supabase stores receipt/export metadata, the originating record/date range, Google file ID, URL, format, version, and timestamp.
 
-HK may create an optional folder structure such as:
+Hearthworks may create an optional folder structure such as:
 
 ```text
-HK Microbakery/
+Hearthworks/
   Receipts/
     YYYY/
       MM/
@@ -337,7 +339,7 @@ HK Microbakery/
   Archives/
 ```
 
-HK must only manage folders and files it created or that the user explicitly selected through Google. Disconnecting Drive stops future exports but does not delete the bakery's existing Drive files.
+Hearthworks must only manage folders and files it created or that the user explicitly selected through Google. Disconnecting Drive stops future exports but does not delete the bakery's existing Drive files.
 
 Proposed native workbook:
 
@@ -352,8 +354,8 @@ Media behavior:
 
 - Public product images may use stable R2 custom-domain URLs and can be linked or displayed in a sheet.
 - Receipt links point to the bakery's Google Drive files and inherit Google ownership and sharing controls.
-- HK does not proxy or retain receipt binaries after a successful Drive upload.
-- If Drive is disconnected, existing files remain in the user's Drive; HK shows the stored link but cannot upload new receipts or refresh exports until reconnected.
+- Hearthworks does not proxy or retain receipt binaries after a successful Drive upload.
+- If Drive is disconnected, existing files remain in the user's Drive; Hearthworks shows the stored link but cannot upload new receipts or refresh exports until reconnected.
 - Bakers who use only planning features may authenticate with email/password and never connect Google. Connecting Google becomes required only when they choose receipt tracking or Google export/reporting features.
 
 ### 7.5 Payments and terminals
@@ -369,17 +371,17 @@ Keep the internal commerce model provider-neutral:
 - `external_refund_id`
 - `payment_status`
 
-The preferred product experience is an HK-native POS paired with a reader owned by the bakery:
+The preferred product experience is a Hearthworks-native POS paired with a reader owned by the bakery:
 
 ```text
-HK builds cart -> HK creates provider checkout -> smart terminal collects card
--> provider webhook verifies result -> HK completes order and reduces inventory
+Hearthworks builds cart -> Hearthworks creates provider checkout -> smart terminal collects card
+-> provider webhook verifies result -> Hearthworks completes order and reduces inventory
 ```
 
 Provider decision gate:
 
 - **Stripe Connect + Terminal:** strongest initial candidate for a unified branded preorder and POS flow. Each connected bakery remains the merchant and buys its own supported reader.
-- **Square Terminal API:** viable alternative with accessible hardware and seller familiarity. It can receive checkout requests from the HK web app.
+- **Square Terminal API:** viable alternative with accessible hardware and seller familiarity. It can receive checkout requests from the Hearthworks web app.
 - **Small Bluetooth readers:** generally require a native iOS/Android client for direct embedded use. Defer until the web POS proves demand.
 
 Do not build payment-provider code until a short integration spike confirms onboarding, direct payouts, refunds, reader ordering, web checkout, terminal checkout, webhook behavior, fee ownership, test-mode support, and account-country availability.
@@ -465,7 +467,7 @@ The global catalog is curated and read-only to ordinary bakery users. It records
 
 Tokens and secrets must never be exposed to browser clients or written into archives, logs, Sheets, or R2 metadata.
 
-Receipt files are not represented by `media_assets`. `expense_receipts` stores the bakery ID, expense ID, Google file ID, Drive URL, MIME type, upload state, and timestamps, but never the file bytes. Deleting an expense from HK must not automatically delete a user-owned Drive receipt without a separate, explicit confirmation.
+Receipt files are not represented by `media_assets`. `expense_receipts` stores the bakery ID, expense ID, Google file ID, Drive URL, MIME type, upload state, and timestamps, but never the file bytes. Deleting an expense from Hearthworks must not automatically delete a user-owned Drive receipt without a separate, explicit confirmation.
 
 ## 9. Phased development plan
 
@@ -507,11 +509,22 @@ Completed locally:
 - Confirmed the three importer migrations are present in production and that importer tables/functions use enabled RLS, owner checks, and the intended invoker/definer boundaries
 - Passed unit tests, lint, typecheck, production build, and local browser console checks
 
+Completed on August 7, 2026:
+
+- Adopted the Hearthworks product name, the byline “The operating system for independent bakers,” the supplied logo assets, and the plum, sage, and porcelain brand palette
+- Rebuilt Studio around the Hearthworks palette while preserving Garden and Confetti as selectable experiences with theme-specific product bars
+- Added automated WCAG AA contrast coverage for critical text, control, feature, status, and danger color pairs across all three themes
+- Added and verified the production `profiles.theme_id` column, allowed values, default, and owner-scoped access so saved appearance choices persist
+- Hardened the appearance save action so it reports success only after Supabase returns the selected saved theme
+- Updated product-facing metadata, navigation branding, legal-page links, archive and Google export display copy, and importer identification while retaining the existing archive schema identifier for backward compatibility
+- Replaced ambiguous repeated recipe-row marks with accessible bread icons and confirmed the rebrand at 1440 × 900 and 390 × 844 with no horizontal overflow
+- Kept this work inside Phase 0: it stabilizes the current application and brand baseline and does not begin the Phase 1 ownership, equipment, costing, or results schema expansion
+
 Still required before Phase 1 begins:
 
-- Commit the protected importer and Phase 0 fixes on an intentional branch
+- Merge and deploy the Hearthworks follow-up from the intentional Phase 0 branch, then smoke-test saved appearance across Studio, Garden, and Confetti in production
 - Complete the repository reorganization using `docs/platform/repository-migration.md`, including independent preview and production verification for both Vercel projects
-- Reconcile the local migration filenames/history with the versions recorded by production before adding another migration
+- Reconcile the local migration filenames/history, including the production appearance migration version, before adding another migration
 - Deploy the importer and verify `/recipes/import` in the authenticated production workspace
 - Run one deliberate Google Sheet export and verify file ownership, tabs, update behavior, and Drive links
 - Compare production migrations, RLS policies, and required Vercel environment variables with the repository
@@ -560,8 +573,8 @@ Functionality:
 - Upload, crop/compress, replace, reorder, and delete product photos
 - Connect Google when the baker first chooses receipt tracking or exports
 - Upload receipt photos directly into the bakery's Google Drive
-- Attach Drive receipt-file references to expenses without retaining HK-owned copies
-- Show product photos in HK and the future storefront
+- Attach Drive receipt-file references to expenses without retaining Hearthworks-owned copies
+- Show product photos in Hearthworks and the future storefront
 - Export event and monthly reports to native Google Sheets
 - Export recipes, production packets, reports, and archives into the bakery's Google Drive
 - Include durable product-photo links and Google Drive receipt links
@@ -576,16 +589,16 @@ Implementation:
 - Delete transient upload buffers immediately after Google confirms file creation
 - Expand Google Sheet generation into stable tab schemas
 - Generalize the existing Google export service across recipes, production packets, reports, and archives
-- Create or reuse HK-owned Drive folders without requesting access to unrelated user files
+- Create or reuse Hearthworks-owned Drive folders without requesting access to unrelated user files
 - Store export version and source date range for reproducibility
 
 Exit criteria:
 
 - Public product images load from the R2 custom domain
 - Receipt bytes exist only in the user's Google Drive after upload completes
-- A user from another bakery cannot access an expense's Drive file reference through HK
+- A user from another bakery cannot access an expense's Drive file reference through Hearthworks
 - A generated Sheet contains correct formulas/totals and working media links
-- Recipe and production-packet exports remain accessible in the bakery's Drive after Google is disconnected from HK
+- Recipe and production-packet exports remain accessible in the bakery's Drive after Google is disconnected from Hearthworks
 - Expired upload/download URLs do not break the durable report link
 
 ### Phase 3 — Product catalog, Bakery Drops, and reservation storefront
@@ -650,16 +663,16 @@ Exit criteria:
 - Duplicate or delayed webhooks cannot duplicate orders or inventory changes
 - Refunds update financial reports without erasing the original transaction
 
-### Phase 5 — HK-native market POS with user-owned smart terminals
+### Phase 5 — Hearthworks-native market POS with user-owned smart terminals
 
-**Goal:** Keep the baker inside HK while selling in person.
+**Goal:** Keep the baker inside Hearthworks while selling in person.
 
 Functionality:
 
 - Market product grid and fast cart
 - Tips, discounts, tax, cash, and card tender
 - Pair/unpair a bakery-owned smart terminal
-- Send checkout details from HK to the terminal
+- Send checkout details from Hearthworks to the terminal
 - Receive authoritative success/failure status
 - Reduce walk-up inventory and unify sales with preorders
 - Digital receipt and refund lookup
@@ -674,9 +687,9 @@ Implementation:
 
 Exit criteria:
 
-- A baker completes consecutive market sales without leaving HK
+- A baker completes consecutive market sales without leaving Hearthworks
 - Preorders and walk-up sales share one inventory and fulfillment view
-- Every provider payment reconciles to exactly one HK payment record
+- Every provider payment reconciles to exactly one Hearthworks payment record
 
 ### Phase 6 — Customers, sale announcements, and repeat sales
 
@@ -740,7 +753,7 @@ Exit criteria:
 
 Functionality:
 
-- Native iOS/Android or carefully evaluated cross-platform HK client
+- Native iOS/Android or carefully evaluated cross-platform Hearthworks client
 - Direct support for compatible small Bluetooth readers or Tap to Pay
 - Offline-capable cash workflow and provider-supported offline card behavior
 - Camera-first receipt and recipe capture
@@ -786,9 +799,9 @@ npm run typecheck
 - Continue from the existing Bake Planner rather than starting over.
 - Build an integrated commerce-to-production loop.
 - Store public product photos in the active Cloudflare R2 service.
-- Never store receipt photos in R2 or another HK-owned object store.
+- Never store receipt photos in R2 or another Hearthworks-owned object store.
 - Require a connected Google account for receipt tracking and Google exports, while allowing email/password users to use non-Google planning features.
-- Store receipt files only in the bakery's Google Drive and retain only the Drive reference and expense metadata in HK.
+- Store receipt files only in the bakery's Google Drive and retain only the Drive reference and expense metadata in Hearthworks.
 - Use native Google Sheets as the preferred expense and financial report export.
 - Use Google Drive as the bakery-owned home for exported recipes, production packets, reports, Sheets, Docs, and archives.
 - Keep Google exports one-way and reproducible rather than treating Sheets as the live database.
@@ -797,7 +810,7 @@ npm run typecheck
 - Capture required preorder email and optional text number, with promotional consent recorded separately by channel.
 - Use an original customer-facing name for preorder releases; `Bakery Drop` is the working term.
 - Model product variants with clear absolute final prices, never confusing `+/-` price math.
-- Build the HK POS interface; do not require bakers to use a separate provider POS app for the final experience.
+- Build the Hearthworks POS interface; do not require bakers to use a separate provider POS app for the final experience.
 - Let each bakery own its payment account, reader, and payouts.
 - Start POS with user-owned smart terminals; defer direct small-reader support until a native client is justified.
 - Keep the commerce schema provider-neutral while evaluating Stripe and Square.
@@ -810,7 +823,7 @@ These decisions should be resolved at their phase boundary rather than guessed n
 1. **R2 public-media layout:** confirm the active public product-media bucket and ensure receipts/reports cannot be uploaded there.
 2. **Public media domain:** select the production hostname, such as `media.hadleyskitchen.com`, and define cache behavior.
 3. **Payment provider:** compare Stripe Connect + Terminal and Square OAuth + Terminal API using the same onboarding, online checkout, refund, and in-person checkout script.
-4. **Drive export ownership:** decide which exports create dated files and which refresh a known HK-created recipe, report, or workbook file.
+4. **Drive export ownership:** decide which exports create dated files and which refresh a known Hearthworks-created recipe, report, or workbook file.
 5. **Receipt Drive workflow:** confirm the folder layout, direct-upload/retry behavior, and whether Sheets use a Drive hyperlink or user-chosen embedded image behavior.
 6. **Equipment seed catalog:** verify manufacturer sources and safe working capacities for the initial Stella/Estella, KitchenAid, Simply Bread, Chandley, and generic-home profiles.
 7. **Release naming:** validate an original alternative to Simply Bread's "Bake Day" before storefront work; `Bakery Drop` is provisional.

@@ -85,7 +85,7 @@ export function buildArchiveHtml(snapshot: EventArchiveSnapshotV1) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(snapshot.event.name)} — Production Packet</title>
 <style>
-:root{--ink:#28231f;--cream:#fbf5e9;--paper:#fffdf8;--copper:#9a4527;--sage:#dfe8da;--line:#d8cbb9;--muted:#6e645b}
+:root{--ink:#312538;--cream:#f8f2e9;--paper:#fffdf8;--copper:#392c41;--sage:#e2e5dd;--line:#d4d0ca;--muted:#665e69}
 *{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--ink);font:14px/1.45 Arial,sans-serif}
 main{width:min(980px,calc(100% - 32px));margin:32px auto}.cover,section{background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px rgba(40,35,31,.07)}
 .cover{padding:42px;margin-bottom:18px;border-top:8px solid var(--ink)}.brand{font:700 15px Georgia,serif;letter-spacing:.08em}.eyebrow,.section-number{color:var(--copper);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:11px}
@@ -98,8 +98,8 @@ section{padding:24px;margin:14px 0;break-inside:avoid}.section-number{margin-bot
 </head>
 <body><main>
   <header class="cover">
-    <div class="brand">HADLEY’S KITCHEN</div>
-    <div class="eyebrow">Bake Planner · Archived Production Packet</div>
+    <div class="brand">HEARTHWORKS</div>
+    <div class="eyebrow">Archived Production Packet</div>
     <h1>${escapeHtml(snapshot.event.name)}</h1>
     <div class="meta">${escapeHtml(date)} · ${escapeHtml(snapshot.event.status.toUpperCase())}</div>
     <div class="metrics">
@@ -126,6 +126,6 @@ export function buildArchiveZip(snapshot: EventArchiveSnapshotV1) {
     [`${base}-production-packet.html`]: strToU8(buildArchiveHtml(snapshot)),
     [`${base}-report.csv`]: strToU8(reportCsv(snapshot.reportSections)),
     [`${base}-source.json`]: strToU8(json),
-    "README.txt": strToU8("Hadley’s Kitchen Bake Planner archive\n\nOpen the HTML production packet in any browser. The CSV contains the report tables. The JSON file is the complete versioned source snapshot for this event.\n"),
+    "README.txt": strToU8("Hearthworks production archive\n\nOpen the HTML production packet in any browser. The CSV contains the report tables. The JSON file is the complete versioned source snapshot for this event.\n"),
   }, { level: 6 });
 }

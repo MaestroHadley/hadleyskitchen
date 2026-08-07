@@ -25,7 +25,7 @@ describe("versioned event archives", () => {
 
   it("creates a printable branded packet", () => {
     const html = buildArchiveHtml(snapshot);
-    expect(html).toContain("HADLEY’S KITCHEN");
+    expect(html).toContain("HEARTHWORKS");
     expect(html).toContain("Archived Production Packet");
     expect(html).toContain("@media print");
     expect(html).toContain("50.6 kg");

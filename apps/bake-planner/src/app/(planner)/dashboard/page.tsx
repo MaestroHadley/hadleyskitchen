@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarBlank, CheckCircle, Notebook, ShoppingCartSimple, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight, Bread, CalendarBlank, CheckCircle, Notebook, ShoppingCartSimple, Sparkle } from "@phosphor-icons/react/dist/ssr";
 import { seedSampleWorkspace, startCleanWorkspace } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
 import { calculatePlan, formatBatches, formatGrams } from "@/lib/planner";
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
       <article className="metric-card"><span>Active starter</span><strong>{formatGrams(plan?.activeStarter ?? 0)}</strong><small>required in dough</small></article>
     </section>
     <section className="dashboard-grid">
-      <article className="panel"><div className="section-heading"><div><p className="eyebrow">Recipe library</p><h2>Recently updated</h2></div><Link className="text-link" href="/recipes">View all <ArrowRight /></Link></div>{recipeResult.recipes.map((recipe) => <Link className="dashboard-row" href={`/recipes/${recipe.id}`} key={recipe.id}><span className="row-icon"><Notebook /></span><span><strong>{recipe.name}</strong><small>{recipe.category} · {recipe.yieldPerBatch} {recipe.yieldLabel}</small></span><ArrowRight /></Link>)}</article>
+      <article className="panel"><div className="section-heading"><div><p className="eyebrow">Recipe library</p><h2>Recently updated</h2></div><Link className="text-link" href="/recipes">View all <ArrowRight /></Link></div>{recipeResult.recipes.map((recipe) => <Link className="dashboard-row" href={`/recipes/${recipe.id}`} key={recipe.id}><span className="row-icon"><Bread weight="duotone" aria-hidden="true" /></span><span><strong>{recipe.name}</strong><small>{recipe.category} · {recipe.yieldPerBatch} {recipe.yieldLabel}</small></span><ArrowRight /></Link>)}</article>
       <article className="panel"><div className="section-heading"><div><p className="eyebrow">Plan control</p><h2>{nextEvent ? nextEvent.name : "No active event"}</h2></div><ShoppingCartSimple /></div>{plan ? <><div className="control-summary"><span><small>Exact flour</small><strong>{formatGrams(plan.totalExactFlour)}</strong></span><span><small>Oven blocks</small><strong>{(plan.ovenMinutes / 60).toFixed(1)} hr</strong></span></div>{plan.production.slice(0, 4).map((row) => <div className="compact-production" key={row.recipe.id}><span>{row.recipe.name}</span><strong>{formatBatches(row.batches)} batches</strong></div>)}</> : <p className="muted">Your next event’s flour, starter, and oven totals will appear here.</p>}</article>
     </section>
   </>;

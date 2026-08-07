@@ -264,23 +264,23 @@ async function exportDoc(title: string, sections: ReportSection[], token: string
   });
   await docBatchUpdate(fileId, token, resetRequests);
 
-  const opening = `HADLEY’S KITCHEN\nBAKE PLANNER · PRODUCTION PACKET\n\n${model.eventName}\n${model.eventDate}\n${model.status.toUpperCase()}\n`;
+  const opening = `HEARTHWORKS\nPRODUCTION PACKET\n\n${model.eventName}\n${model.eventDate}\n${model.status.toUpperCase()}\n`;
   const openingRange = await appendDocText(fileId, token, opening);
-  const packetLabelStart = openingRange.startIndex + "HADLEY’S KITCHEN\n".length;
+  const packetLabelStart = openingRange.startIndex + "HEARTHWORKS\n".length;
   const eventNameStart = openingRange.startIndex + opening.indexOf(model.eventName);
   const dateStart = openingRange.startIndex + opening.indexOf(model.eventDate);
   const statusStart = openingRange.startIndex + opening.lastIndexOf(model.status.toUpperCase());
   await docBatchUpdate(fileId, token, [
     {
       updateTextStyle: {
-        range: { startIndex: openingRange.startIndex, endIndex: openingRange.startIndex + "HADLEY’S KITCHEN".length },
+        range: { startIndex: openingRange.startIndex, endIndex: openingRange.startIndex + "HEARTHWORKS".length },
         textStyle: { weightedFontFamily: { fontFamily: "Georgia" }, fontSize: dimension(10), bold: true, foregroundColor: optionalColor(DOC_COLORS.charcoal) },
         fields: "weightedFontFamily,fontSize,bold,foregroundColor",
       },
     },
     {
       updateTextStyle: {
-        range: { startIndex: packetLabelStart, endIndex: packetLabelStart + "BAKE PLANNER · PRODUCTION PACKET".length },
+        range: { startIndex: packetLabelStart, endIndex: packetLabelStart + "PRODUCTION PACKET".length },
         textStyle: { weightedFontFamily: { fontFamily: "Arial" }, fontSize: dimension(8), bold: true, foregroundColor: optionalColor(DOC_COLORS.copper) },
         fields: "weightedFontFamily,fontSize,bold,foregroundColor",
       },
@@ -338,7 +338,7 @@ async function exportDoc(title: string, sections: ReportSection[], token: string
     }
   }
 
-  const footer = await appendDocText(fileId, token, "HADLEY’S KITCHEN · BAKE PLANNER\nGenerated as a planning snapshot. Verify final quantities before production.\n");
+  const footer = await appendDocText(fileId, token, "HEARTHWORKS · THE OPERATING SYSTEM FOR INDEPENDENT BAKERS\nGenerated as a planning snapshot. Verify final quantities before production.\n");
   await docBatchUpdate(fileId, token, [
     {
       updateTextStyle: {

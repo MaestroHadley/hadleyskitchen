@@ -1,4 +1,6 @@
-# Hadley’s Kitchen Bake Planner
+# Hearthworks
+
+The operating system for independent bakers.
 
 Mobile-first production planning for market bakers. The app stores reusable gram-based recipes, guides a focused five-step event workflow, and calculates batches, flour, starter, shopping, oven blocks, CSV, print/PDF, and optional Google exports.
 

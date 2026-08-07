@@ -6,9 +6,9 @@ const display = Libre_Baskerville({ subsets: ["latin"], weight: ["400", "700"], 
 const body = Source_Sans_3({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
-  title: { default: "Bake Planner | Hadley’s Kitchen", template: "%s | Hadley’s Kitchen Bake Planner" },
-  description: "Save recipes once, plan market bakes visually, and create clear production reports.",
-  icons: { icon: "/images/hk-logo.png", apple: "/images/hk-logo.png" },
+  title: { default: "Hearthworks", template: "%s | Hearthworks" },
+  description: "The operating system for independent bakers. Save recipes, plan production, and run market bakes with confidence.",
+  icons: { icon: "/hearthworks-logo-dark.png", apple: "/hearthworks-logo-dark.png" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
