@@ -469,6 +469,12 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
 .mini-panel { display: flex; align-items: center; gap: 12px; }
 .mini-panel span, .mini-panel small { display: block; }
 .google-panel { display: grid; gap: 13px; }
+.connected-account { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid #bed1b7; border-radius: 12px; background: var(--sage-soft); color: var(--success); }
+.connected-account > svg { flex: 0 0 auto; width: 22px; height: 22px; }
+.connected-account strong, .connected-account small, .connected-account em { display: block; overflow-wrap: anywhere; }
+.connected-account small { margin-top: 2px; color: var(--ink); }
+.connected-account em, .account-warning { margin-top: 5px; color: var(--danger); font-size: 12px; font-style: normal; font-weight: 750; }
+.connected-account.mismatch { border-color: #e3b8b1; background: #fff2ef; color: var(--danger); }
 .export-options { display: grid; gap: 9px; }
 .export-option { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fffdf9; }
 .export-option strong, .export-option small { display: block; }
@@ -818,6 +824,7 @@ input::placeholder, textarea::placeholder { color: var(--color-text-muted); opac
   .row-order-controls { grid-template-columns: 1fr; }
   .row-order-controls button { width: 30px; height: 22px; }
   .quick-ingredient-row input { min-height: 46px; padding-inline: 9px; }
+  .quick-ingredient-row .number-suffix input { padding-right: 36px; }
   .quick-delete, .quick-add-button { width: 38px; height: 44px; }
   .formula-settings summary { min-height: 78px; }
   .formula-role-list { padding-left: 0; }

@@ -395,10 +395,11 @@ export async function POST(request: Request) {
     const { data: auth } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
     if (!supabase || !auth.user) return NextResponse.json({ error: "Sign in before exporting." }, { status: 401 });
     const [{ data: connection }, eventData] = await Promise.all([
-      supabase.from("google_connections").select("encrypted_refresh_token").eq("user_id", auth.user.id).maybeSingle(),
+      supabase.from("google_connections").select("encrypted_refresh_token, google_email").eq("user_id", auth.user.id).maybeSingle(),
       getEvent(parsed.data.eventId),
     ]);
     if (!connection) return NextResponse.json({ error: "Connect Google Drive first.", reconnect: true }, { status: 409 });
+    if (!connection.google_email) return NextResponse.json({ error: "Reconnect Google Drive so Hearthworks can confirm which Google account owns new exports.", reconnect: true }, { status: 409 });
     if (!eventData) return NextResponse.json({ error: "Event not found." }, { status: 404 });
     if (parsed.data.archive && parsed.data.existingFileId) return NextResponse.json({ error: "Archival exports must create a new copy." }, { status: 400 });
     if (parsed.data.existingFileId) {

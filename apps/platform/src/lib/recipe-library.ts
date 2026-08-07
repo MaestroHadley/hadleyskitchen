@@ -8,6 +8,15 @@ export type RecipeCollectionFilters = {
   sort?: "recent" | "name" | "category";
 };
 
+export function uniqueRecipeCategories(values: Array<string | null | undefined>) {
+  const categories = new Map<string, string>();
+  for (const value of values) {
+    const category = value?.trim();
+    if (category && !categories.has(category.toLocaleLowerCase())) categories.set(category.toLocaleLowerCase(), category);
+  }
+  return [...categories.values()].sort((a, b) => a.localeCompare(b));
+}
+
 export function filterRecipeCollection(recipes: Recipe[], filters: RecipeCollectionFilters = {}) {
   let rows = [...recipes];
   const query = filters.query?.trim().toLocaleLowerCase();

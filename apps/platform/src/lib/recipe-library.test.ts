@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Recipe } from "./planner";
-import { filterRecipeCollection } from "./recipe-library";
+import { filterRecipeCollection, uniqueRecipeCategories } from "./recipe-library";
 
 const makeRecipes = (count: number): Recipe[] => Array.from({ length: count }, (_, index) => ({
   id: `recipe-${index}`,
@@ -31,5 +31,9 @@ describe("scalable recipe collection", () => {
     const rows = filterRecipeCollection(makeRecipes(50), { sort: "name" });
     expect(rows[0]?.name).toBe("Recipe 001");
     expect(rows.at(-1)?.name).toBe("Recipe 049");
+  });
+
+  it("builds a clean, case-insensitive category list", () => {
+    expect(uniqueRecipeCategories(["Bread", " pastry ", "bread", "", null])).toEqual(["Bread", "pastry"]);
   });
 });

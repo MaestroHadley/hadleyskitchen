@@ -1,7 +1,7 @@
 import { samplePlannerEvent, sampleRecipes, sampleSettings } from "@/data/sample";
 import { emptyQaChecks, qaCheckKeys, type EventQaChecks, type Ingredient, type PlannerEvent, type PlannerSettings, type Recipe } from "@/lib/planner";
 import { filterEventCollection, type EventCollectionFilters, type EventSort, type EventSummary, type EventView } from "@/lib/event-library";
-import { filterRecipeCollection, type RecipeCollectionFilters } from "@/lib/recipe-library";
+import { filterRecipeCollection, uniqueRecipeCategories, type RecipeCollectionFilters } from "@/lib/recipe-library";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -103,6 +103,22 @@ export async function getRecipe(id: string) {
   const { data, error } = await supabase.from("recipes").select("*, recipe_ingredients(*)").eq("id", id).eq("user_id", user.id).single();
   if (error) return null;
   return mapRecipe(data as RecipeRow);
+}
+
+export async function listRecipeCategories() {
+  if (isDemoMode()) return uniqueRecipeCategories(sampleRecipes.map((recipe) => recipe.category));
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) return [];
+  const [savedCategories, recipeCategories] = await Promise.all([
+    supabase.from("recipe_categories").select("name").eq("user_id", user.id).order("name"),
+    supabase.from("recipes").select("category").eq("user_id", user.id).order("category"),
+  ]);
+  if (savedCategories.error) throw new Error(savedCategories.error.message);
+  if (recipeCategories.error) throw new Error(recipeCategories.error.message);
+  return uniqueRecipeCategories([
+    ...(savedCategories.data ?? []).map((category) => category.name),
+    ...(recipeCategories.data ?? []).map((recipe) => recipe.category),
+  ]);
 }
 
 export async function getRecipeVersions(id: string) {

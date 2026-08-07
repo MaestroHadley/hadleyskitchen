@@ -7,6 +7,8 @@ The timestamped migration filenames match the versions recorded by the productio
 - `20260723185959_harden_recipe_import_quota.sql`
 - `20260723190034_recipe_import_usage_user_index.sql`
 - `20260807161604_add_bakery_theme.sql`
+- `20260807180701_add_google_connection_identity.sql`
+- `20260807183729_add_recipe_category_defaults.sql`
 
 The original `001`, `002`, and `003` files are retained as the reproducible baseline schema. Their tables, functions, and policies exist in production, but those early changes were applied before the current remote migration-history records were established.
 

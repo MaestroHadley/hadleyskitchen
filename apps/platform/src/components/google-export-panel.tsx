@@ -5,7 +5,15 @@ import { ArrowClockwise, ArrowSquareOut, CheckCircle, FileDoc, GoogleDriveLogo, 
 import { googleConnectionFailureMessage } from "@/lib/google-oauth";
 
 type ExportRecord = { kind: "doc" | "sheet"; google_file_id: string; google_file_url: string; exported_at: string };
-type Connection = { connected: boolean; connectedAt?: string; exports: ExportRecord[] };
+type Connection = {
+  connected: boolean;
+  needsReconnect?: boolean;
+  googleEmail?: string;
+  signedInEmail?: string;
+  accountMismatch?: boolean;
+  connectedAt?: string;
+  exports: ExportRecord[];
+};
 
 export function GoogleExportPanel({ eventId, callbackStatus, failureReason }: { eventId: string; callbackStatus?: string; failureReason?: string }) {
   const [connection, setConnection] = useState<Connection | null>(null);
@@ -54,7 +62,11 @@ export function GoogleExportPanel({ eventId, callbackStatus, failureReason }: { 
   }
 
   if (state === "loading") return <article className="panel google-panel"><div className="google-heading"><SpinnerGap className="spin" /><div><h2>Checking Google Drive</h2><p>One moment…</p></div></div></article>;
-  if (!connection?.connected) return <article className="panel google-panel"><div className="google-heading"><GoogleDriveLogo weight="duotone" /><div><p className="eyebrow">Optional export</p><h2>Connect Google Drive</h2><p>Drive access is requested only when you export. Your planner login remains separate.</p></div></div><a className="button google-button button-link" href={`/api/google/connect?returnTo=${encodeURIComponent(`/events/${eventId}/report`)}`}><GoogleDriveLogo weight="bold" />Connect Google Drive<ArrowSquareOut /></a>{message && <p className="inline-message error">{message}</p>}</article>;
+  if (!connection?.connected) return <article className="panel google-panel">
+    <div className="google-heading"><GoogleDriveLogo weight="duotone" /><div><p className="eyebrow">Optional export</p><h2>{connection?.needsReconnect ? "Confirm your Google account" : "Connect Google Drive"}</h2><p>{connection?.needsReconnect ? "Reconnect once so Hearthworks can show which Google account will own new files." : "Drive access is requested only when you export. Your planner login remains separate."}</p></div></div>
+    <a className="button google-button button-link" href={`/api/google/connect?returnTo=${encodeURIComponent(`/events/${eventId}/report`)}`}><GoogleDriveLogo weight="bold" />{connection?.needsReconnect ? "Reconnect Google Drive" : "Connect Google Drive"}<ArrowSquareOut /></a>
+    {message && <p className="inline-message error">{message}</p>}
+  </article>;
 
   const doc = connection.exports.find((item) => item.kind === "doc");
   const sheet = connection.exports.find((item) => item.kind === "sheet");
