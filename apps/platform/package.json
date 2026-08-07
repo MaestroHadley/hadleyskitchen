@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
+    "test:responsive": "playwright test",
+    "test:responsive:update": "playwright test --update-snapshots",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -21,6 +23,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
