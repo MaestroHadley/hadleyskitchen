@@ -540,7 +540,7 @@ Current repository baseline — August 12, 2026:
 - Added a report-level grams / pounds-and-ounces shopping toggle while keeping grams as the production default; Google Docs, Google Sheets, CSV, and archive report data now carry both measurements for grocery purchasing, and flour no longer receives store-specific package counts in the UI or exports
 - Persisted each event's checked shopping-list ingredients with owner-scoped event updates and visible save status so purchasing progress survives reloads alongside Final QA
 - Re-spaced Google export receipts so the file type, creation timestamp, and Drive link remain distinct and readable
-- Re-ran the Phase 0 local evidence boundary from `apps/platform`: all 60 Vitest tests, all 83 responsive browser checks from 320–1440 px, lint, production build, typecheck, and `git diff --check` passed
+- Re-ran the Phase 0 local evidence boundary from `apps/platform`: all 60 Vitest tests passed; 82 unchanged responsive checks passed across 320–1440 px, and the corrected new plan-control check plus focused flour-shopping check passed separately; lint, production build, typecheck, and `git diff --check` also passed
 - Confirmed from the current source tree that Phase 1 has not begun: there is no `bakery_id` ownership migration, equipment catalog/onboarding, ingredient price history, recipe costing, expense or market-results model, storefront, ordering, payment, or POS surface
 
 Still required before Phase 1 begins:
