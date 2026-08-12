@@ -195,6 +195,23 @@ test("connected Google account identity remains readable", async ({ page }) => {
   await expectResponsiveContainment(page);
 });
 
+test("shopping list switches between grams and pounds plus ounces", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/events/sample/report");
+  const unitGroup = page.getByRole("group", { name: "Shopping list units" });
+  const grams = unitGroup.getByRole("button", { name: "Grams" });
+  const imperial = unitGroup.getByRole("button", { name: "lb + oz" });
+
+  await expect(grams).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".shopping-row").first()).toContainText("33 g");
+  await imperial.click();
+  await expect(imperial).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".shopping-row").first()).toContainText("1.2 oz");
+  await expect(page.locator(".shopping-row").nth(1)).toContainText("5 lb 3.8 oz");
+  expect(await imperial.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
+  await expectResponsiveContainment(page);
+});
+
 test("date-time and suffix controls remain inside their wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openPlanStep(page, 1);

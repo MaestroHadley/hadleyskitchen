@@ -89,7 +89,7 @@ function shoppingTable(section: ReportSection | undefined): GoogleDocTable {
   return {
     rows: rows.map((row, rowIndex) => rowIndex === 0
       ? ["Ingredient", "Exact", "With buffer", "Packages"]
-      : [String(row[0]), formatGrams(row[1]), formatGrams(row[2]), row[3] === "" ? "—" : formatNumber(row[3])]),
+      : [String(row[0]), `${formatGrams(row[1])}\n${row[2]}`, `${formatGrams(row[3])}\n${row[4]}`, row[5] === "" ? "—" : formatNumber(row[5])]),
     columnWidths: [220, 90, 100, 70],
     headerRows: 1,
     firstColumnEmphasis: true,
