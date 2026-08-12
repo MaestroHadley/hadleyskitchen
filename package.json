@@ -4,11 +4,6 @@
   "scripts": {
     "dev:website": "npm --prefix apps/website run dev",
     "build:website": "npm --prefix apps/website run build",
-    "lint:website": "npm --prefix apps/website run lint",
-    "dev:platform": "npm --prefix apps/platform run dev",
-    "build:platform": "npm --prefix apps/platform run build",
-    "lint:platform": "npm --prefix apps/platform run lint",
-    "test:platform": "npm --prefix apps/platform test",
-    "typecheck:platform": "npm --prefix apps/platform run typecheck"
+    "lint:website": "npm --prefix apps/website run lint"
   }
 }

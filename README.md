@@ -1,13 +1,10 @@
-# Hadley's Kitchen Repository
+# Hadley's Kitchen Website
 
-This repository contains two independently deployed Next.js applications.
+This repository contains the Hadley's Kitchen bakery website deployed at `hadleyskitchen.com`.
 
-| Application | Path | Production domain |
-|---|---|---|
-| Hadley's Kitchen website | `apps/website` | `hadleyskitchen.com` |
-| Hearthworks platform | `apps/platform` | `app.hadleyskitchen.com` |
+Hearthworks was extracted to its independent [`MaestroHadley/Hearthworks`](https://github.com/MaestroHadley/Hearthworks) repository on August 12, 2026. Its final source state in this repository is preserved by the `hearthworks-extraction-2026-08-12` tag.
 
-Each application owns its dependencies and lockfile. The repository intentionally does not use npm workspaces or a shared build system.
+The website owns its dependencies and lockfile in `apps/website`. The repository intentionally does not use npm workspaces.
 
 ## Commands
 
@@ -17,12 +14,4 @@ Run application commands from the repository root:
 npm run dev:website
 npm run build:website
 npm run lint:website
-
-npm run dev:platform
-npm run build:platform
-npm run typecheck:platform
-npm run test:platform
-npm run lint:platform
 ```
-
-Architecture, product planning, and migration records live in `docs/platform`.
