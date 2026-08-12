@@ -32,6 +32,7 @@ export function RecipeLibrary({ recipes, total, page, pageSize, filters }: Props
   const [query, setQuery] = useState(filters.query);
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const categories = ["Bread", "Bagels", "Sweet Rolls", "Pastry", "Cookies", "Other"];
+  const resultKind = filters.favorites ? "favorite" : filters.status === "archived" ? "archived" : "active";
 
   useEffect(() => {
     if (query === filters.query) return;
@@ -45,10 +46,13 @@ export function RecipeLibrary({ recipes, total, page, pageSize, filters }: Props
       <select value={filters.category} aria-label="Filter by category" onChange={(event) => router.replace(hrefFor(filters, { category: event.target.value, page: 1 }))}><option value="">All categories</option>{categories.map((category) => <option key={category}>{category}</option>)}</select>
       <select value={filters.sort} aria-label="Sort recipes" onChange={(event) => router.replace(hrefFor(filters, { sort: event.target.value, page: 1 }))}><option value="recent">Recently updated</option><option value="name">A–Z</option><option value="category">Category</option></select>
     </div>
-    <div className="library-tabs" role="navigation" aria-label="Recipe views">
-      <Link className={filters.status === "active" && !filters.favorites ? "active" : ""} href={hrefFor(filters, { status: "active", favorites: false, page: 1 })}>Active <span>{filters.status === "active" ? total : ""}</span></Link>
-      <Link className={filters.favorites ? "active" : ""} href={hrefFor(filters, { status: "active", favorites: true, page: 1 })}><Star weight="fill" />Favorites</Link>
-      <Link className={filters.status === "archived" ? "active" : ""} href={hrefFor(filters, { status: "archived", favorites: false, page: 1 })}><Archive />Archived</Link>
+    <div className="library-view-bar">
+      <div className="library-tabs" role="navigation" aria-label="Recipe views">
+        <Link aria-current={filters.status === "active" && !filters.favorites ? "page" : undefined} className={filters.status === "active" && !filters.favorites ? "active" : ""} href={hrefFor(filters, { status: "active", favorites: false, page: 1 })}>Active</Link>
+        <Link aria-current={filters.favorites ? "page" : undefined} className={filters.favorites ? "active" : ""} href={hrefFor(filters, { status: "active", favorites: true, page: 1 })}><Star weight="fill" />Favorites</Link>
+        <Link aria-current={filters.status === "archived" ? "page" : undefined} className={filters.status === "archived" ? "active" : ""} href={hrefFor(filters, { status: "archived", favorites: false, page: 1 })}><Archive />Archived</Link>
+      </div>
+      <p className="library-result-count" aria-live="polite">{total.toLocaleString()} {resultKind} {total === 1 ? "recipe" : "recipes"}</p>
     </div>
     {recipes.length ? <div className="recipe-table" role="list">
       <div className="recipe-table-head"><span>Recipe</span><span>Category</span><span>Yield</span><span>Updated</span><span /></div>

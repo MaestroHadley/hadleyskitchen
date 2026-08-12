@@ -117,6 +117,15 @@ test("plan review separates names, metadata, and totals", async ({ page }) => {
   await expectResponsiveContainment(page);
 });
 
+test("recipe view tabs separate navigation labels from the result count", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/recipes");
+  const activeTab = page.locator(".library-tabs a.active");
+  await expect(activeTab).toHaveText("Active");
+  await expect(page.locator(".library-result-count")).toHaveText(/^\d+ active recipes?$/);
+  await expectResponsiveContainment(page);
+});
+
 test("date-time and suffix controls remain inside their wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openPlanStep(page, 1);
@@ -127,6 +136,7 @@ test("date-time and suffix controls remain inside their wrappers", async ({ page
   expect(inputBox).not.toBeNull();
   expect(inputBox!.x).toBeGreaterThanOrEqual(wrapperBox!.x);
   expect(inputBox!.x + inputBox!.width).toBeLessThanOrEqual(wrapperBox!.x + wrapperBox!.width + 1);
+  expect(await dateWrapper.evaluate((element) => parseFloat(getComputedStyle(element).borderBottomWidth))).toBeGreaterThanOrEqual(1);
   await expectResponsiveContainment(page);
 
   await page.goto("/recipes/plain");
@@ -146,6 +156,7 @@ test("iOS WebKit date-time control cannot create horizontal page drag", async ({
   expect(inputBox).not.toBeNull();
   expect(inputBox!.x).toBeGreaterThanOrEqual(wrapperBox!.x);
   expect(inputBox!.x + inputBox!.width).toBeLessThanOrEqual(wrapperBox!.x + wrapperBox!.width + 1);
+  expect(await dateWrapper.evaluate((element) => parseFloat(getComputedStyle(element).borderBottomWidth))).toBeGreaterThanOrEqual(1);
   await expectResponsiveContainment(page);
 
   await page.evaluate(() => window.scrollTo({ left: 100, behavior: "instant" }));
@@ -171,6 +182,11 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 768, height: 1024 
       await page.goto("/recipes/plain");
       await page.getByRole("button", { name: "Edit recipe" }).click();
       await expect(page.locator(".recipe-edit-form")).toHaveScreenshot(`recipe-editor-${viewport.width}.png`);
+    });
+
+    test("recipe library views", async ({ page }) => {
+      await page.goto("/recipes");
+      await expect(page.locator(".library-view-bar")).toHaveScreenshot(`recipe-library-views-${viewport.width}.png`);
     });
   });
 }
