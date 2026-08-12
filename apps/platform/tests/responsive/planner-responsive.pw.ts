@@ -117,6 +117,29 @@ test("plan review separates names, metadata, and totals", async ({ page }) => {
   await expectResponsiveContainment(page);
 });
 
+test("product targets and batching controls stay comfortably readable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openPlanStep(page, 2);
+  const controls = page.locator(".product-controls").first();
+  await expect(controls).toBeVisible();
+  await expect(controls.locator("select")).toHaveValue("whole");
+  await expect(controls.locator("select option[value='whole']")).toHaveText("Batches");
+  const sizes = await controls.evaluate((element) => {
+    const label = element.querySelector("label");
+    const input = element.querySelector("input");
+    const select = element.querySelector("select");
+    return {
+      label: label ? Number.parseFloat(getComputedStyle(label).fontSize) : 0,
+      input: input ? Number.parseFloat(getComputedStyle(input).fontSize) : 0,
+      select: select ? Number.parseFloat(getComputedStyle(select).fontSize) : 0,
+    };
+  });
+  expect(sizes.label).toBeGreaterThanOrEqual(13);
+  expect(sizes.input).toBeGreaterThanOrEqual(16);
+  expect(sizes.select).toBeGreaterThanOrEqual(16);
+  await expectResponsiveContainment(page);
+});
+
 test("recipe view tabs separate navigation labels from the result count", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/recipes");
@@ -207,7 +230,13 @@ test("shopping list switches between grams and pounds plus ounces", async ({ pag
   await imperial.click();
   await expect(imperial).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".shopping-row").first()).toContainText("1.2 oz");
-  await expect(page.locator(".shopping-row").nth(1)).toContainText("5 lb 3.8 oz");
+  const flourRow = page.locator(".shopping-row").nth(1);
+  await expect(flourRow).toContainText("5 lb 3.8 oz");
+  await expect(flourRow.locator("em")).toHaveCount(0);
+  const firstItem = page.locator(".shopping-row").first().getByRole("checkbox");
+  await firstItem.check();
+  await expect(firstItem).toBeChecked();
+  await expect(page.locator(".shopping-save-state")).toHaveText("Saved");
   expect(await imperial.evaluate((element) => element.getBoundingClientRect().height)).toBeGreaterThanOrEqual(44);
   await expectResponsiveContainment(page);
 });

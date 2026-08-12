@@ -537,9 +537,10 @@ Current repository baseline — August 12, 2026:
 - Upgraded the platform to Next.js 16.3.0, React 19.2.4, and React DOM 19.2.4
 - Added recipe-library bulk selection with persistent, all-filtered selection and one managed Google Doc per recipe in the `Hearthworks Recipes` Drive folder; repeat exports update the recorded Doc instead of creating duplicates
 - Refreshed the supplied Hearthworks brand assets, enlarged the account and Drive visual anchors, repaired the connected-account layout, replaced recipe book glyphs with centered document icons, and made the full sidebar account region navigable
-- Added a report-level grams / pounds-and-ounces shopping toggle while keeping grams as the production default; Google Docs, Google Sheets, CSV, and archive report data now carry both measurements for grocery purchasing
+- Added a report-level grams / pounds-and-ounces shopping toggle while keeping grams as the production default; Google Docs, Google Sheets, CSV, and archive report data now carry both measurements for grocery purchasing, and flour no longer receives store-specific package counts in the UI or exports
+- Persisted each event's checked shopping-list ingredients with owner-scoped event updates and visible save status so purchasing progress survives reloads alongside Final QA
 - Re-spaced Google export receipts so the file type, creation timestamp, and Drive link remain distinct and readable
-- Re-ran the Phase 0 local evidence boundary from `apps/platform`: all 57 Vitest tests, all 82 responsive browser checks from 320–1440 px, lint, production build, typecheck, and `git diff --check` passed
+- Re-ran the Phase 0 local evidence boundary from `apps/platform`: all 60 Vitest tests, all 83 responsive browser checks from 320–1440 px, lint, production build, typecheck, and `git diff --check` passed
 - Confirmed from the current source tree that Phase 1 has not begun: there is no `bakery_id` ownership migration, equipment catalog/onboarding, ingredient price history, recipe costing, expense or market-results model, storefront, ordering, payment, or POS surface
 
 Still required before Phase 1 begins:

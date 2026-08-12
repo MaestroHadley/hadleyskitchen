@@ -47,15 +47,16 @@ final result: passed
 
 - Pounds-and-ounces shopping list at the 390 × 844 CSS viewport: `/private/tmp/hearthworks-shopping-list-lb-oz-mobile.png` (390 × 844 px, device scale factor 1).
 - Desktop shopping-list rows: `/private/tmp/hearthworks-shopping-list-lb-oz-desktop.png` (1440 × 900 px, device scale factor 1).
-- State: `lb + oz` selected; exact and buffered amounts converted; package counts retained.
+- State: `lb + oz` selected; exact and buffered amounts converted; package guidance retained only for configured non-flour ingredients.
 - Interaction: both unit buttons switch state, expose `aria-pressed`, and measure 44 px high on mobile.
+- Shopping checkboxes now expose Saved / Saving / Couldn’t save feedback and restore the event's saved ingredient names after reload.
 - Browser console: no errors. Document width and scroll width were both 390 px at the mobile target.
 
 ### Full-view and focused comparison
 
 - The report preserves the source panel's serif heading, uppercase eyebrow, checkbox rhythm, ingredient emphasis, muted exact amount, right-aligned shopping amount, borders, and warm paper surface.
 - The new segmented unit control occupies the requested upper-right position on desktop and becomes a full-width 44 px control below the heading on mobile, avoiding collisions with the title.
-- Pounds-and-ounces values remain scannable and right-aligned; package counts move to their own continuation line on mobile.
+- Pounds-and-ounces values remain scannable and right-aligned; flour rows omit store-specific package counts, while configured non-flour guidance can move to its own continuation line on mobile.
 - The export receipt now uses separate grid rows for its icon, title/timestamp stack, and Drive link. The title and timestamp have explicit block layout, 4 px internal spacing, and 1.35 line height instead of touching.
 
 ### Required fidelity surfaces
@@ -71,6 +72,43 @@ final result: passed
 - Initial source finding (P1): the export receipt merged the creation label and timestamp into one unreadable line. Fixed with a two-column receipt grid and an explicit copy stack.
 - Initial source finding (P1): shopping amounts were only practical in grams for US grocery purchasing. Fixed with the report toggle and dual-unit Doc/Sheet export columns.
 - Post-fix evidence: in-app browser interaction confirmed the switch from `33 g` to `1.2 oz` and from `2,376 g` to `5 lb 3.8 oz`; the 390 px viewport has no horizontal overflow.
+- Persistence follow-up: the focused browser check confirms a shopping item can be checked and returns to Saved; the production migration adds a non-null, bounded `shopping_checked_items` array to the existing owner-protected event row.
 - No actionable P0, P1, or P2 visual differences remain. A real Google export success receipt and generated Doc/Sheet remain live-only verification because creating them changes the user's Drive.
+
+final result: passed
+
+## August 12 plan-control readability iteration
+
+### Source visual truth
+
+- User-provided mobile crop: `/var/folders/1f/x79y6bsn00l62vjs2cjsk1w00000gn/T/codex-clipboard-c409776f-830a-49aa-895d-ba104df97674.png` (401 × 442 px).
+
+### Implementation evidence
+
+- Browser-rendered plan flow: `/private/tmp/hearthworks-plan-controls-390x844.png` (390 × 844 px, CSS viewport 390 × 844, device scale factor 1).
+- State: Step 2 Products, first selected recipe, whole-batch policy selected.
+- Interaction: the batching select switched to Exact scaling and back to Batches; the final selected option read `Batches`.
+- Browser console: no warnings or errors. Document overflow was 0 px.
+
+### Full-view and focused comparison
+
+- The full mobile capture preserves the existing Hearthworks card, step rail, recipe row, fixed action bar, and bottom navigation.
+- The focused control region keeps the source two-column Target / Batching arrangement and rounded controls while increasing the uppercase labels from 11 px to 13 px and both control values to 16 px.
+- `Whole batches` is shortened to `Batches`, removing unnecessary width and improving scanning without changing the stored whole-batch policy.
+
+### Required fidelity surfaces
+
+- Fonts and typography: the existing UI family and heavy optical weights are retained; labels are 13 px and values are 16 px.
+- Spacing and layout rhythm: the label-to-control gap increases to 6 px; the two-column mobile grid remains contained at 390 px.
+- Colors and tokens: existing ink, muted, line, paper, and focus tokens are unchanged.
+- Image quality and assets: this control region contains no image assets; the supplied Hearthworks logo remains unchanged elsewhere in the capture.
+- Copy and content: `Whole batches` becomes `Batches`; Target and Batching labels remain explicit.
+
+### Comparison history and findings
+
+- Initial source finding (P1): labels and selected values were too small for quick mobile planning. Fixed with explicit 13 px labels and 16 px input/select text.
+- Initial source finding (P2): `Whole batches` was unnecessarily verbose. Fixed with `Batches` while preserving the `whole` value.
+- Post-fix evidence: computed browser styles measured 13 px / 16 px / 16 px for label, input, and select, with no horizontal overflow and no console errors.
+- No actionable P0, P1, or P2 visual differences remain.
 
 final result: passed
