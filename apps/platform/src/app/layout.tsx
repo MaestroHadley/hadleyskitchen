@@ -8,7 +8,7 @@ const body = Source_Sans_3({ subsets: ["latin"], variable: "--font-body" });
 export const metadata: Metadata = {
   title: { default: "Hearthworks", template: "%s | Hearthworks" },
   description: "The operating system for independent bakers. Save recipes, plan production, and run market bakes with confidence.",
-  icons: { icon: "/hearthworks-logo-dark.png", apple: "/hearthworks-logo-dark.png" },
+  icons: { icon: "/hearthworks-logo-dark.svg", apple: "/hearthworks-logo-light.png" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

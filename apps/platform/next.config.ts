@@ -14,6 +14,7 @@ if (process.env.VERCEL) {
 }
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   poweredByHeader: false,
   outputFileTracingRoot: path.join(process.cwd(), "../.."),
   env: {

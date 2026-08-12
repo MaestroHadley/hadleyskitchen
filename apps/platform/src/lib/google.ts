@@ -14,3 +14,19 @@ export function googleAuthorizationUrl(origin: string, state: string, loginHint?
 function key() { return crypto.createHash("sha256").update(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY ?? "missing-key").digest(); }
 export function encryptToken(value: string) { const iv = crypto.randomBytes(12); const cipher = crypto.createCipheriv("aes-256-gcm", key(), iv); const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]); return `${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`; }
 export function decryptToken(value: string) { const [iv, tag, payload] = value.split(".").map((part) => Buffer.from(part, "base64url")); const decipher = crypto.createDecipheriv("aes-256-gcm", key(), iv); decipher.setAuthTag(tag); return Buffer.concat([decipher.update(payload), decipher.final()]).toString("utf8"); }
+
+export async function googleAccessToken(refreshToken: string) {
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID ?? "",
+      client_secret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok || !body.access_token) throw new Error("Google authorization has expired. Reconnect Google Drive to continue.");
+  return body.access_token as string;
+}

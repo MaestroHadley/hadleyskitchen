@@ -126,6 +126,75 @@ test("recipe view tabs separate navigation labels from the result count", async 
   await expectResponsiveContainment(page);
 });
 
+test("recipe selection persists and can select every filtered result", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/recipes");
+  await page.getByRole("button", { name: "Select recipes" }).click();
+  await page.getByRole("checkbox", { name: "Select Plain Sourdough" }).check();
+  await expect(page.getByText("1 selected", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Export to Google Drive" })).toBeEnabled();
+  const selectAll = page.getByRole("button", { name: /Select all \d+/ });
+  await selectAll.click();
+  await expect(selectAll).toBeEnabled({ timeout: 15_000 });
+  const selectedCount = await page.getByRole("checkbox").count();
+  await expect(page.getByText(`${selectedCount} selected`, { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText(`${selectedCount} selected`, { exact: true })).toBeVisible();
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(selectedCount);
+  await expectResponsiveContainment(page);
+});
+
+test("recipe icons are centered and account surfaces use readable controls", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/dashboard");
+  const icon = page.locator(".dashboard-row .row-icon").first();
+  const glyph = icon.locator("svg");
+  const [iconBox, glyphBox] = await Promise.all([icon.boundingBox(), glyph.boundingBox()]);
+  expect(iconBox).not.toBeNull();
+  expect(glyphBox).not.toBeNull();
+  expect(Math.abs((iconBox!.x + iconBox!.width / 2) - (glyphBox!.x + glyphBox!.width / 2))).toBeLessThanOrEqual(1);
+  expect(Math.abs((iconBox!.y + iconBox!.height / 2) - (glyphBox!.y + glyphBox!.height / 2))).toBeLessThanOrEqual(1);
+
+  const sidebarAccount = page.locator(".sidebar-account");
+  await expect(sidebarAccount).toHaveAttribute("href", "/account");
+  expect(await sidebarAccount.evaluate((element) => element.tagName)).toBe("A");
+
+  await page.goto("/account");
+  const featureIcons = page.locator(".feature-icon");
+  expect(await featureIcons.count()).toBeGreaterThanOrEqual(2);
+  for (const featureIcon of await featureIcons.all()) {
+    const box = await featureIcon.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(48);
+    expect(box!.height).toBeGreaterThanOrEqual(48);
+  }
+  await expect(page.locator(".connection-card-copy")).toBeVisible();
+  await expectResponsiveContainment(page);
+});
+
+test("connected Google account identity remains readable", async ({ page }) => {
+  await page.route("**/api/google/status", (route) => route.fulfill({
+    contentType: "application/json",
+    body: JSON.stringify({
+      connected: true,
+      googleEmail: "hadleyskitchen@gmail.com",
+      signedInEmail: "hadleyskitchen@protonmail.com",
+      accountMismatch: true,
+      exports: [],
+    }),
+  }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/account");
+  const account = page.locator(".connected-account");
+  await expect(account).toContainText("Connected Google account");
+  await expect(account).toContainText("hadleyskitchen@gmail.com");
+  await expect(account).toContainText("Different from your Hearthworks sign-in");
+  const box = await account.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThan(300);
+  await expectResponsiveContainment(page);
+});
+
 test("date-time and suffix controls remain inside their wrappers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openPlanStep(page, 1);

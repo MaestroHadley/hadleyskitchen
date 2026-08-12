@@ -35,7 +35,7 @@ export function AppShell({ children, email, bakeryName, themeId }: { children: R
       <nav aria-label="Planner navigation">
         {navigation.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className={isActive(href) ? "nav-link active" : "nav-link"}><Icon weight={isActive(href) ? "fill" : "regular"} /><span>{label}</span></Link>)}
       </nav>
-      <div className="sidebar-account"><span>{initials}</span><div><strong>{bakeryName}</strong><small>{email}</small></div><Link href="/account" aria-label="Account settings"><GearSix /></Link></div>
+      <Link className="sidebar-account" href="/account" aria-label={`Open account settings for ${bakeryName}`}><span>{initials}</span><div><strong>{bakeryName}</strong><small>{email}</small></div><GearSix aria-hidden="true" /></Link>
     </aside>
     <main className="workspace">{children}</main>
     <nav className="mobile-nav" aria-label="Mobile navigation">
