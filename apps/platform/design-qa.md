@@ -31,7 +31,7 @@
 
 ## Remaining live-only verification
 
-- Apply `supabase/migrations/20260812192651_recipe_drive_exports.sql` to the linked project.
+- `supabase/migrations/20260812204333_recipe_drive_exports.sql` is applied and its table, column, RLS policy, and grants are verified in the linked project.
 - With explicit approval, export and re-export a real recipe to verify Google ownership, folder creation, Docs formatting, and update-in-place behavior. Local implementation deliberately did not create files in the user's Google Drive.
 
 final result: passed

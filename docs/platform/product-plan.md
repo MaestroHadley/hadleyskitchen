@@ -544,7 +544,7 @@ Still required before Phase 1 begins:
 
 - Verify both Vercel projects are building from their new Root Directories (`apps/website` and `apps/platform`) and smoke-test both production domains
 - Run one deliberate Google Sheet export and verify file ownership, tabs, update behavior, and Drive links; this creates a real Drive file and requires explicit approval at action time
-- Apply `20260812192651_recipe_drive_exports.sql`, then run one deliberate recipe export and re-export to verify the managed folder, Google Doc formatting, ownership, update-in-place behavior, and persisted Drive links
+- The production database now includes `20260812204333_recipe_drive_exports.sql`; run one deliberate recipe export and re-export to verify the managed folder, Google Doc formatting, ownership, update-in-place behavior, and persisted Drive links
 - Confirm complete Vercel environment-variable name coverage using a surface that exposes environment names; successful builds and the connected Drive state confirm the required core configuration but not every optional importer variable
 - Decide whether to address the current Supabase performance-advisor findings before Phase 1: 16 unindexed foreign keys and 14 owner policies using per-row `auth.uid()` evaluation
 
