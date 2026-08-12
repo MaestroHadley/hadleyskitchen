@@ -32,16 +32,16 @@ export function DriveConnection({ connectedFromCallback, failedFromCallback, fai
   }
   const reconnect = connection?.needsReconnect;
   return <article className="panel connection-card">
-    <span className="feature-icon small"><GoogleDriveLogo weight="duotone" /></span>
-    <div><p className="eyebrow">Optional integration</p><h2>Google Drive</h2><p className="muted">Create Docs and Sheets only when you choose to export. Planner sign-in never requests Drive access.</p></div>
+    <span className="feature-icon"><GoogleDriveLogo weight="duotone" /></span>
+    <div className="connection-card-copy"><p className="eyebrow">Optional integration</p><h2>Google Drive</h2><p className="muted">Create Docs and Sheets only when you choose to export. Planner sign-in never requests Drive access.</p></div>
     {connection === null ? <p className="inline-message"><SpinnerGap className="spin" />Checking connection…</p> : connection.connected ? <>
       <div className={connection.accountMismatch ? "connected-account mismatch" : "connected-account"}>
         {connection.accountMismatch ? <WarningCircle weight="fill" /> : <CheckCircle weight="fill" />}
         <span><strong>Connected Google account</strong><small>{connection.googleEmail}</small>{connection.accountMismatch && <em>Different from your Hearthworks sign-in: {connection.signedInEmail}</em>}</span>
       </div>
-      <div className="button-row"><a className="button secondary button-link icon-button" href="/api/google/connect?returnTo=/account"><ArrowsClockwise />Switch account</a><button className="button ghost icon-button" onClick={disconnect}><Trash />Disconnect</button></div>
+      <div className="button-row connection-actions"><a className="button secondary button-link icon-button" href="/api/google/connect?returnTo=/account"><ArrowsClockwise />Switch account</a><button className="button ghost icon-button" onClick={disconnect}><Trash />Disconnect</button></div>
     </> : <>
-      <a className="button google-button button-link" href="/api/google/connect?returnTo=/account"><GoogleDriveLogo weight="bold" />{reconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</a>
+      <a className="button google-button button-link connection-primary-action" href="/api/google/connect?returnTo=/account"><GoogleDriveLogo weight="bold" />{reconnect ? "Reconnect Google Drive" : "Connect Google Drive"}</a>
       {reconnect && <p className="inline-message error">Reconnect once to identify which Google account owns your exports.</p>}
     </>}
     {message && <p className={failedFromCallback ? "inline-message error" : "inline-message"}>{message}</p>}

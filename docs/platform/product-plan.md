@@ -1,7 +1,7 @@
 # Hearthworks Product and Implementation Plan
 
 **Status:** Product and implementation plan
-**Last refined:** August 7, 2026
+**Last refined:** August 12, 2026
 **Current application:** `apps/platform` at `app.hadleyskitchen.com`
 **Product name:** Hearthworks
 **Byline:** The operating system for independent bakers
@@ -530,11 +530,21 @@ Verified and completed on August 7, 2026:
 - Passed clean installs, lint, and production builds for both applications; Hearthworks also passed all 45 tests and typecheck
 - Verified the primary public-site and signed-out platform surfaces at 390 × 844 with no horizontal overflow or browser-console errors
 
+Current repository baseline — August 12, 2026:
+
+- Merged the repository reorganization in PR #23; the public website now lives in `apps/website`, Hearthworks lives in `apps/platform`, and platform documentation lives in `docs/platform`
+- Merged the subsequent Google Drive identity and recipe-editing work, responsive-layout audit, Safari date-input correction, and mobile recipe-navigation improvements through PR #27
+- Upgraded the platform to Next.js 16.3.0, React 19.2.4, and React DOM 19.2.4
+- Added recipe-library bulk selection with persistent, all-filtered selection and one managed Google Doc per recipe in the `Hearthworks Recipes` Drive folder; repeat exports update the recorded Doc instead of creating duplicates
+- Refreshed the supplied Hearthworks brand assets, enlarged the account and Drive visual anchors, repaired the connected-account layout, replaced recipe book glyphs with centered document icons, and made the full sidebar account region navigable
+- Re-ran the Phase 0 local evidence boundary from `apps/platform`: all 54 Vitest tests, all 81 responsive browser checks from 320–1440 px, lint, production build, typecheck, and `git diff --check` passed
+- Confirmed from the current source tree that Phase 1 has not begun: there is no `bakery_id` ownership migration, equipment catalog/onboarding, ingredient price history, recipe costing, expense or market-results model, storefront, ordering, payment, or POS surface
+
 Still required before Phase 1 begins:
 
-- Change the two Vercel Root Directory settings, push this migration branch, and verify independent preview deployments before merging the repository move
-- After merge, verify both production deployments and domains from their new roots
+- Verify both Vercel projects are building from their new Root Directories (`apps/website` and `apps/platform`) and smoke-test both production domains
 - Run one deliberate Google Sheet export and verify file ownership, tabs, update behavior, and Drive links; this creates a real Drive file and requires explicit approval at action time
+- Apply `20260812192651_recipe_drive_exports.sql`, then run one deliberate recipe export and re-export to verify the managed folder, Google Doc formatting, ownership, update-in-place behavior, and persisted Drive links
 - Confirm complete Vercel environment-variable name coverage using a surface that exposes environment names; successful builds and the connected Drive state confirm the required core configuration but not every optional importer variable
 - Decide whether to address the current Supabase performance-advisor findings before Phase 1: 16 unindexed foreign keys and 14 owner policies using per-row `auth.uid()` evaluation
 
@@ -844,16 +854,16 @@ These decisions should be resolved at their phase boundary rather than guessed n
 
 The next working sequence is:
 
-1. Change both Vercel Root Directory settings and obtain READY previews for this repository-migration branch.
-2. Merge the verified repository move and smoke-test both production domains.
-3. Run the deliberate Google Sheet export verification with explicit approval.
-4. Record or remediate the current Supabase advisor findings before Phase 1 migrations.
-5. Draft the bakery-workspace, equipment-catalog, and ingredient-costing schema for Phase 1.
-6. Define the equipment-onboarding questions, confirmation states, and deterministic capacity contract.
-7. Define the Market Results mobile flow and deterministic profitability contract.
+1. Verify both live Vercel projects use `apps/website` and `apps/platform` as their Root Directories, then smoke-test both production domains.
+2. Run the deliberate Google Sheet export verification with explicit approval.
+3. Record or remediate the current Supabase advisor findings before Phase 1 migrations.
+4. Draft the `bakery_id` ownership migration and the bakery-workspace, membership, equipment-catalog, ingredient-price-history, and recipe-costing schema for Phase 1.
+5. Define the equipment-onboarding questions, confirmation states, source requirements, versioning behavior, and deterministic capacity contract.
+6. Define the Market Results mobile flow and deterministic profitability contract, including sales, fees, direct expenses, leftovers, waste, and snapshotted costs.
+7. Specify migration, rollback, RLS, historical-snapshot, and existing-user backfill tests before applying the Phase 1 schema.
 8. Inventory the active R2 configuration without exposing credentials.
-9. Specify the Drive receipt lifecycle, report formats, customers, consent, allergens, and product variants.
-10. Build Phase 1 before beginning storefront or payment work.
+9. Specify the Drive receipt lifecycle, report formats, customers, consent, allergens, and product variants for their later phase boundaries.
+10. Build and verify Phase 1 before beginning storefront or payment work.
 
 ## 14. Reference documentation
 
