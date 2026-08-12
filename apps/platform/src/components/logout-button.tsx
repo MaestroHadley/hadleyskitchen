@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { SignOut, SpinnerGap } from "@phosphor-icons/react";
 import { createClient } from "@/lib/supabase/client";
 
 export function LogoutButton() {
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   async function logout() {
@@ -17,7 +19,8 @@ export function LogoutButton() {
       setPending(false);
       return;
     }
-    location.assign("/");
+    router.replace("/");
+    router.refresh();
   }
   return <div><button className="button secondary icon-button" onClick={logout} disabled={pending}>{pending ? <SpinnerGap className="spin" /> : <SignOut />}Log out</button>{error && <p className="inline-message error">{error}</p>}</div>;
 }
