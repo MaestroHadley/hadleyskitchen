@@ -8,6 +8,7 @@ import { getRecipe, getSessionUser, isDemoMode } from "@/lib/planner-data";
 import type { EventQaChecks, PlannerEvent, Recipe } from "@/lib/planner";
 import { AI_IMPORT_CONSENT_VERSION, confirmedRecipeImportSchema, type RecipeImportDraft } from "@/lib/recipe-import";
 import { isThemeId } from "@/lib/themes";
+import { normalizeShoppingCheckedItems } from "@/lib/shopping-checks";
 
 const ingredientSchema = z.object({
   id: z.string().optional(),
@@ -244,6 +245,28 @@ export async function saveEventQaChecks(id: string, checks: EventQaChecks): Prom
     .select("id")
     .single();
   if (error || !data) return { ok: false, error: error?.message ?? "Could not save the checklist." };
+  revalidatePath(`/events/${id}/report`);
+  revalidatePath("/events");
+  return { ok: true, id };
+}
+
+export async function saveEventShoppingChecks(id: string, checkedItems: string[]): Promise<ActionResult> {
+  if (isDemoMode() && id === "sample") return { ok: true, id };
+  const parsed = z.object({
+    id: z.string().uuid(),
+    checkedItems: z.array(z.string().trim().min(1).max(120)).max(250),
+  }).safeParse({ id, checkedItems });
+  if (!parsed.success) return { ok: false, error: "Check the shopping-list values." };
+  const normalizedCheckedItems = normalizeShoppingCheckedItems(parsed.data.checkedItems);
+  const { supabase, user } = await getSessionUser();
+  if (!supabase || !user) return { ok: false, error: "Sign in to update this event." };
+  const { data, error } = await supabase.from("events")
+    .update({ shopping_checked_items: normalizedCheckedItems, updated_at: new Date().toISOString() })
+    .eq("id", parsed.data.id)
+    .eq("user_id", user.id)
+    .select("id")
+    .single();
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not save the shopping list." };
   revalidatePath(`/events/${id}/report`);
   revalidatePath("/events");
   return { ok: true, id };

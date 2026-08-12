@@ -70,6 +70,7 @@ export type PlannerEvent = {
   starterHydration: number;
   items: EventItem[];
   schedule: ScheduleBlock[];
+  shoppingChecked: string[];
   qaChecks: EventQaChecks;
   createdAt?: string;
   updatedAt?: string;
@@ -98,7 +99,7 @@ export function calculatePlan(recipes: Recipe[], items: EventItem[], settings: P
   let totalBatches = 0;
   let totalProducts = 0;
   let ovenMinutes = 0;
-  const shopping = new Map<string, { name: string; exact: number; packageGrams?: number }>();
+  const shopping = new Map<string, { name: string; exact: number; role: IngredientRole; packageGrams?: number }>();
 
   const production = items.flatMap((item) => {
     const recipe = recipeMap.get(item.recipeId);
@@ -120,6 +121,7 @@ export function calculatePlan(recipes: Recipe[], items: EventItem[], settings: P
         shopping.set(key, {
           name: ingredient.name.trim(),
           exact: (existing?.exact ?? 0) + exact,
+          role: ingredient.role,
           packageGrams: ingredient.packageGrams ?? existing?.packageGrams,
         });
       }
@@ -131,14 +133,14 @@ export function calculatePlan(recipes: Recipe[], items: EventItem[], settings: P
   const starterFlour = activeStarter / (1 + settings.starterHydration);
   const starterWater = activeStarter - starterFlour;
   const totalExactFlour = directFlour + starterFlour;
-  const flourRows = [...shopping.values()].filter((row) => row.name.toLocaleLowerCase().includes("flour"));
+  const flourRows = [...shopping.values()].filter((row) => row.role === "flour");
   const starterFeedRow = flourRows.find((row) => row.name.toLocaleLowerCase().includes("organic ap")) ?? flourRows[0];
   if (starterFeedRow) starterFeedRow.exact += starterFlour;
 
   const shoppingRows = [...shopping.values()]
     .map((row) => {
       const buffered = row.exact * (1 + settings.shoppingBuffer);
-      return { ...row, buffered, packages: row.packageGrams ? Math.ceil(buffered / row.packageGrams) : null };
+      return { ...row, buffered, packages: row.role !== "flour" && row.packageGrams ? Math.ceil(buffered / row.packageGrams) : null };
     })
     .sort((a, b) => a.name.localeCompare(b.name));
 

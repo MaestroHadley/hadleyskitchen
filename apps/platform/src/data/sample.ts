@@ -109,6 +109,7 @@ export const samplePlannerEvent: PlannerEvent = {
   starterHydration: 1,
   items: sampleEvent,
   schedule: sampleSchedule,
+  shoppingChecked: [],
   qaChecks: {
     quantities: false,
     starter: false,

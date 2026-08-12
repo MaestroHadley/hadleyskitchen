@@ -19,8 +19,17 @@ describe("Saturday reference plan", () => {
     expect(plan.production.filter((row) => row.recipe.category === "Bagels").reduce((sum, row) => sum + row.batches, 0)).toBe(6);
   });
 
-  it("rounds the buffered Kirkland package requirement to six", () => {
-    expect(plan.shopping.find((row) => row.name === "Organic AP Flour")?.packages).toBe(6);
+  it("does not prescribe store-specific package counts for flour", () => {
+    expect(plan.shopping.find((row) => row.name === "Organic AP Flour")?.packages).toBeNull();
+  });
+
+  it("keeps package guidance for non-flour ingredients when configured", () => {
+    const recipes = structuredClone(sampleRecipes);
+    const packagedIngredient = recipes[0].ingredients.find((ingredient) => ingredient.role === "other");
+    expect(packagedIngredient).toBeDefined();
+    packagedIngredient!.packageGrams = 100;
+    const packagedPlan = calculatePlan(recipes, sampleEvent, sampleSettings);
+    expect(packagedPlan.shopping.find((row) => row.name === packagedIngredient!.name)?.packages).toEqual(expect.any(Number));
   });
 
   it("handles zero targets, fractional batches, and distinct hydration", () => {

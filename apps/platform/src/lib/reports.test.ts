@@ -12,5 +12,6 @@ describe("report exports", () => {
     expect(section?.rows[1][2]).toMatch(/(?:lb|oz)/);
     expect(section?.rows[1][3]).toEqual(expect.any(Number));
     expect(section?.rows[1][4]).toMatch(/(?:lb|oz)/);
+    expect(section?.rows.find((row) => row[0] === "Organic AP Flour")?.[5]).toBe("");
   });
 });

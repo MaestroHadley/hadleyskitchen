@@ -4,6 +4,7 @@ import { filterEventCollection, type EventCollectionFilters, type EventSort, typ
 import { filterRecipeCollection, uniqueRecipeCategories, type RecipeCollectionFilters } from "@/lib/recipe-library";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeShoppingCheckedItems } from "./shopping-checks";
 
 export const isDemoMode = () => process.env.NODE_ENV !== "production" && !getSupabasePublicConfig();
 
@@ -223,6 +224,7 @@ export async function getEvent(id: string): Promise<{ event: PlannerEvent; recip
       starterHydration: Number(event.starter_hydration),
       items: items.map((item: { id: string; recipe_id: string; target: number | string; batch_policy: "whole" | "exact" }) => ({ id: item.id, recipeId: item.recipe_id, target: Number(item.target), policy: item.batch_policy })),
       schedule: (event.schedule_blocks ?? []).sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order).map((block: { id: string; day_label: string; title: string; notes: string; sort_order: number }) => ({ id: block.id, dayLabel: block.day_label, title: block.title, notes: block.notes, sortOrder: block.sort_order })),
+      shoppingChecked: normalizeShoppingCheckedItems(event.shopping_checked_items),
       qaChecks: event.qa_checks ? mapQaChecks(event.qa_checks) : emptyQaChecks(),
       createdAt: event.created_at,
       updatedAt: event.updated_at,
