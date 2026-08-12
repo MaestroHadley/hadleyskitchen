@@ -35,3 +35,42 @@
 - With explicit approval, export and re-export a real recipe to verify Google ownership, folder creation, Docs formatting, and update-in-place behavior. Local implementation deliberately did not create files in the user's Google Drive.
 
 final result: passed
+
+## August 12 shopping-unit and export-receipt iteration
+
+### Source visual truth
+
+- Shopping-list density and hierarchy: `/var/folders/1f/x79y6bsn00l62vjs2cjsk1w00000gn/T/codex-clipboard-8f739624-ac48-4247-8fd5-d5a3e18ec7d7.png` (757 × 473 px).
+- Cramped Google export receipt: `/var/folders/1f/x79y6bsn00l62vjs2cjsk1w00000gn/T/codex-clipboard-de4b5961-edbb-4391-ac72-6d305928daf3.png` (390 × 121 px).
+
+### Implementation evidence
+
+- Pounds-and-ounces shopping list at the 390 × 844 CSS viewport: `/private/tmp/hearthworks-shopping-list-lb-oz-mobile.png` (390 × 844 px, device scale factor 1).
+- Desktop shopping-list rows: `/private/tmp/hearthworks-shopping-list-lb-oz-desktop.png` (1440 × 900 px, device scale factor 1).
+- State: `lb + oz` selected; exact and buffered amounts converted; package counts retained.
+- Interaction: both unit buttons switch state, expose `aria-pressed`, and measure 44 px high on mobile.
+- Browser console: no errors. Document width and scroll width were both 390 px at the mobile target.
+
+### Full-view and focused comparison
+
+- The report preserves the source panel's serif heading, uppercase eyebrow, checkbox rhythm, ingredient emphasis, muted exact amount, right-aligned shopping amount, borders, and warm paper surface.
+- The new segmented unit control occupies the requested upper-right position on desktop and becomes a full-width 44 px control below the heading on mobile, avoiding collisions with the title.
+- Pounds-and-ounces values remain scannable and right-aligned; package counts move to their own continuation line on mobile.
+- The export receipt now uses separate grid rows for its icon, title/timestamp stack, and Drive link. The title and timestamp have explicit block layout, 4 px internal spacing, and 1.35 line height instead of touching.
+
+### Required fidelity surfaces
+
+- Fonts and typography: existing display and UI fonts, weights, line heights, and hierarchy are unchanged; imperial values use the same numeric emphasis as grams.
+- Spacing and layout rhythm: source row density is preserved; the toggle adds a deliberate 12 px mobile gap and export receipt copy has distinct vertical spacing.
+- Colors and tokens: existing paper, cream, ink, muted, copper, sage, and success tokens are reused.
+- Image quality and assets: no new image assets were required; the existing supplied Hearthworks logo remains unchanged.
+- Copy and content: unit labels are concise, exact and buffered meanings remain intact, and exports identify both gram and lb + oz values.
+
+### Comparison history and findings
+
+- Initial source finding (P1): the export receipt merged the creation label and timestamp into one unreadable line. Fixed with a two-column receipt grid and an explicit copy stack.
+- Initial source finding (P1): shopping amounts were only practical in grams for US grocery purchasing. Fixed with the report toggle and dual-unit Doc/Sheet export columns.
+- Post-fix evidence: in-app browser interaction confirmed the switch from `33 g` to `1.2 oz` and from `2,376 g` to `5 lb 3.8 oz`; the 390 px viewport has no horizontal overflow.
+- No actionable P0, P1, or P2 visual differences remain. A real Google export success receipt and generated Doc/Sheet remain live-only verification because creating them changes the user's Drive.
+
+final result: passed

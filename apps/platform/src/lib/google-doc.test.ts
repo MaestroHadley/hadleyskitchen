@@ -7,7 +7,7 @@ describe("premium Google Doc model", () => {
     { title: "Event Overview", rows: [["Event", "Saturday Pop-Up"], ["Date", "2026-07-25T09:00:00-07:00"], ["Status", "finalized"], ["Total products", 164], ["Total batches", 38]] },
     { title: "Production Plan", rows: [["Recipe", "Target", "Batches", "Planned", "Overage"], ["Plain Sourdough", 18, 9, 18, 0]] },
     { title: "Ingredients", rows: [["Control", "Grams"], ["Direct flour", 45415], ["Starter flour", 5146], ["Starter water", 5146], ["Active starter", 10292], ["Discard tracked", 0], ["Total exact flour", 50561], ["Total buffered flour", 55617.1]] },
-    { title: "Shopping List", rows: [["Ingredient", "Exact grams", "Buffered grams", "Packages to buy"], ["Organic AP Flour", 48401, 53241, 6]] },
+    { title: "Shopping List", rows: [["Ingredient", "Exact grams", "Exact lb + oz", "Buffered grams", "Buffered lb + oz", "Packages to buy"], ["Organic AP Flour", 48401, "106 lb 11.2 oz", 53241, "117 lb 5.8 oz", 6]] },
     { title: "Starter", rows: [["Build component", "Grams"], ["Build target", 11321], ["Seed starter", 2264], ["Flour feed", 4528], ["Water feed", 4528]] },
     { title: "Oven & Schedule", rows: [["Estimated oven hours", "12.9"], ["Block", "Task", "Notes"], ["Thursday", "Build starter", "Scale ingredients"]] },
     { title: "Final QA", rows: [["Check", "Status"], ["Production quantities verified", "Pending"]] },
@@ -28,7 +28,7 @@ describe("premium Google Doc model", () => {
     const shopping = model.sections.find((section) => section.title === "Buffered shopping list");
     expect(shopping?.pageBreakBefore).toBe(true);
     expect(shopping?.tables[0].rows[0]).toEqual(["Ingredient", "Exact", "With buffer", "Packages"]);
-    expect(shopping?.tables[0].rows[1][1]).toMatch(/ g$/);
+    expect(shopping?.tables[0].rows[1]).toEqual(["Organic AP Flour", "48,401 g\n106 lb 11.2 oz", "53,241 g\n117 lb 5.8 oz", "6"]);
     expect(model.sections.find((section) => section.title === "Oven & production schedule")?.pageBreakBefore).toBe(true);
   });
 
