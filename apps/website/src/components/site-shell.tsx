@@ -75,7 +75,10 @@ export function SiteShell({ children }: SiteShellProps) {
             <p>{siteContent.disclosure.storage}</p>
             <p>{siteContent.disclosure.pets}</p>
           </div>
-          <p>{new Date().getFullYear()} Hadley&apos;s Kitchen</p>
+          <p>
+            © {new Date().getFullYear()} Hadley LLC. Hearthworks is a product of Hadley
+            LLC, doing business as Hadley&apos;s Kitchen.
+          </p>
         </div>
       </footer>
     </div>

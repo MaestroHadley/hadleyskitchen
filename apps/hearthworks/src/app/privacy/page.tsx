@@ -14,9 +14,15 @@ export default function PrivacyPage() {
         <p className="eyebrow">Hearthworks legal</p>
         <h1>Privacy Policy</h1>
         <p className="legal-page__meta">
+          <small>
+            Hadley LLC, an Oregon limited liability company, does business as Hadley&apos;s Kitchen and
+            provides the Hearthworks software service.
+          </small>
+        </p>
+        <p className="legal-page__meta">
           <small>Effective date: August 16, 2026</small>
           <br />
-          <small>Draft from internal legal package; operator and contact placeholders remain.</small>
+          <small>Draft details should be reviewed with counsel before publication.</small>
         </p>
 
         <p className="legal-page__note">
@@ -28,6 +34,9 @@ export default function PrivacyPage() {
           <p>
             This policy explains how Hearthworks handles information from your use of the marketing site and
             planning application. It does not replace provider-level terms for Google, Supabase, Vercel, or Cloudflare.
+          </p>
+          <p>
+            Please contact the operator via the published website channels for account and privacy requests.
           </p>
         </section>
 
@@ -114,4 +123,3 @@ export default function PrivacyPage() {
     </main>
   );
 }
-

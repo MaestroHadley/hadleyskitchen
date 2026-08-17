@@ -14,9 +14,15 @@ export default function TermsPage() {
         <p className="eyebrow">Hearthworks legal</p>
         <h1>Terms of Service</h1>
         <p className="legal-page__meta">
+          <small>
+            Hadley LLC, an Oregon limited liability company, does business as Hadley&apos;s Kitchen and
+            provides the Hearthworks software service.
+          </small>
+        </p>
+        <p className="legal-page__meta">
           <small>Effective date: August 16, 2026</small>
           <br />
-          <small>Draft from internal legal package; final entity details are pending counsel review.</small>
+          <small>Draft details should be reviewed with counsel before publication.</small>
         </p>
 
         <p className="legal-page__note">
@@ -32,6 +38,10 @@ export default function TermsPage() {
             for an organization, “you” includes both you and that organization.
           </p>
           <p>You must be at least 18 and using the Service for bakery business or professional bakery operations.</p>
+          <p>
+            We do not accept responsibility for outcomes from recipes, food safety decisions, or business
+            usage decisions made using the Service.
+          </p>
         </section>
 
         <section>
@@ -135,4 +145,3 @@ export default function TermsPage() {
     </main>
   );
 }
-
