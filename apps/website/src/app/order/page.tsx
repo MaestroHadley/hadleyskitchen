@@ -51,6 +51,7 @@ export default function OrderPage() {
             src={siteContent.site.orderUrl}
             loading="lazy"
             referrerPolicy="strict-origin-when-cross-origin"
+            sandbox="allow-forms allow-same-origin allow-scripts"
           />
         </div>
       </section>
