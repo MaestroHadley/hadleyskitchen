@@ -5,11 +5,12 @@ export const siteContent = {
       "A Eugene cottage bakery built around sourdough bread, generous bakes, food access, and community-rooted hospitality.",
     orderUrl: "https://app.simply-bread.co/hadleyskitchen/",
     email: "HadleysKitchen@protonmail.com",
+    updatesUrl: "https://app.simply-bread.co/hadleyskitchen/signup",
   },
   navItems: [
     { href: "/", label: "Home" },
     { href: "/about", label: "About" },
-    { href: "/order", label: "Order and Schedule" },
+    { href: "/order", label: "Events & Ordering" },
     { href: "/contact", label: "Contact" },
   ],
   hero: {
