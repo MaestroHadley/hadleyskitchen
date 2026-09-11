@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { UpcomingEvents } from "@/components/upcoming-events";
 import Image from "next/image";
 import Link from "next/link";
 import { siteContent } from "@/content/site";
@@ -9,9 +11,14 @@ export const metadata: Metadata = {
     "Hadley's Kitchen is a Eugene cottage bakery offering sourdough bread, generous bakes, and community-rooted hospitality built around nourishment and access.",
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  await connection();
+  // Request-time server snapshot; shared with the client to keep hydration consistent.
+  // eslint-disable-next-line react-hooks/purity
+  const initialNow = Date.now();
   return (
     <>
+      <UpcomingEvents initialNow={initialNow} preview />
       <section className="hero">
         <div className="hero__layout container">
           <div className="hero__imageWrap">

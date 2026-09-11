@@ -1,21 +1,31 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
+import { UpcomingEvents } from "@/components/upcoming-events";
 import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
-  title: "Order",
+  title: "Events & Ordering",
   description:
-    "Order sourdough bread, pastries, and other baked goods from Hadley's Kitchen online, or reach out for custom bakery requests.",
+    "Find upcoming Hadley's Kitchen markets and pop-ups in Eugene, and order sourdough bread, pastries, and other baked goods online.",
 };
 
-export default function OrderPage() {
+export default async function OrderPage() {
+  await connection();
+  // Request-time server snapshot; shared with the client to keep hydration consistent.
+  // eslint-disable-next-line react-hooks/purity
+  const initialNow = Date.now();
   return (
     <div className="page">
       <section className="page-hero">
         <div className="container order-page__hero">
           <div>
-            <p className="eyebrow eyebrow--dark">Order</p>
-            <h1>Order Online</h1>
-            <p className="hero__description section-copy--dark">{siteContent.order.intro}</p>
+            <p className="eyebrow eyebrow--dark">Visit &amp; Order</p>
+            <h1>Events &amp; Ordering</h1>
+            <p className="hero__description section-copy--dark">Find us at an upcoming market or pop-up, or browse our online ordering below.</p>
+            <nav className="button-row order-page__jumpLinks" aria-label="On this page">
+              <a className="button button--primary" href="#events">Upcoming Events</a>
+              <a className="button button--secondary" href="#ordering">Order Online</a>
+            </nav>
           </div>
 
           <div className="order-page__actions">
@@ -29,7 +39,7 @@ export default function OrderPage() {
             </a>
             <a
               className="button button--secondary order-page__customButton"
-              href="https://app.simply-bread.co/hadleyskitchen/signup"
+              href={siteContent.site.updatesUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -39,10 +49,13 @@ export default function OrderPage() {
         </div>
       </section>
 
-      <section className="page-section">
+      <UpcomingEvents initialNow={initialNow} />
+
+      <section className="page-section" id="ordering" aria-labelledby="ordering-heading">
         <div className="container">
           <div className="order-page__embedHeader">
-            <p className="eyebrow eyebrow--dark">Order Here</p>
+            <h2 id="ordering-heading" className="section-title section-title--dark">Order Online</h2>
+            <p className="section-copy section-copy--dark">{siteContent.order.intro}</p>
           </div>
 
           <iframe
