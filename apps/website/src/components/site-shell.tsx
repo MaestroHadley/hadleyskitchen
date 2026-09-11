@@ -60,6 +60,8 @@ export function SiteShell({ children }: SiteShellProps) {
 
           <div className="site-footer__links">
             <Link href="/cottage-disclosure">Cottage Disclosure</Link>
+            <Link href="/terms">Terms of Service</Link>
+            <Link href="/privacy">Privacy Policy</Link>
             <a href={siteContent.site.orderUrl}>Order Inquiry</a>
             <a href={`mailto:${siteContent.site.email}`}>{siteContent.site.email}</a>
             <p>527 N Garden Way Eugene, OR.</p>
