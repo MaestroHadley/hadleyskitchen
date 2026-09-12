@@ -1,104 +1,82 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { UpcomingEvents } from "@/components/upcoming-events";
 import Image from "next/image";
 import Link from "next/link";
+import { UpcomingEvents } from "@/components/upcoming-events";
 import { siteContent } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Home",
-  description:
-    "Hadley's Kitchen is a Eugene cottage bakery offering sourdough bread, generous bakes, and community-rooted hospitality built around nourishment and access.",
+  description: "Naturally leavened sourdough, pastries, and generous bakes from Hadley's Kitchen, a community-minded cottage bakery in Eugene, Oregon.",
 };
+
+const bakes = [
+  { title: "Sourdough Bread", image: "sourdough", alt: "A golden sourdough loaf on a wooden board outside Hadley's Kitchen.", caption: "Naturally leavened. Made generously.", width: 1600, height: 2133 },
+  { title: "Pastries", image: "cinnamon-rolls", alt: "An iced cinnamon roll from Hadley's Kitchen, ready to share.", caption: "Sweet treats, made with care.", width: 1000, height: 1333 },
+  { title: "Premium Bagels", image: "everything-bagels", alt: "A freshly baked batch of everything bagels topped with seeds.", caption: "Extra generous. Full of flavor.", width: 1000, height: 1778 },
+];
 
 export default async function HomePage() {
   await connection();
-  // Request-time server snapshot; shared with the client to keep hydration consistent.
+  // Share a request-time snapshot with the client for consistent event hydration.
   // eslint-disable-next-line react-hooks/purity
   const initialNow = Date.now();
+
   return (
-    <>
+    <div className="kitchen-home">
+      <section className="kitchen-hero" aria-labelledby="home-heading">
+        <div className="container kitchen-hero__layout">
+          <div className="kitchen-hero__copy">
+            <p className="kitchen-eyebrow">A cottage bakery in Eugene, Oregon</p>
+            <h1 id="home-heading">From our kitchen,<br />with love.</h1>
+            <p className="kitchen-hero__tagline">{siteContent.hero.headline}</p>
+            <p className="kitchen-hero__intro">Naturally leavened sourdough.<br />Generous bakes. Always made with care.</p>
+            <Link className="button button--primary" href="/order">Events &amp; Ordering</Link>
+          </div>
+          <div className="kitchen-hero__photos">
+            <figure className="kitchen-photo kitchen-photo--bread">
+              <Image src="/images/kitchen-table/sourdough.webp" alt="A fresh Hadley's Kitchen sourdough loaf, cooling on a wooden board." width={1600} height={2133} sizes="(max-width: 700px) 78vw, 46vw" loading="eager" fetchPriority="high" />
+              <figcaption>Made to share.</figcaption>
+            </figure>
+            <figure className="kitchen-photo kitchen-photo--sweet">
+              <Image src="/images/kitchen-table/cinnamon-rolls.webp" alt="A generously iced cinnamon roll from our kitchen." width={1000} height={1333} sizes="(max-width: 700px) 36vw, 21vw" />
+            </figure>
+          </div>
+        </div>
+      </section>
+
       <UpcomingEvents initialNow={initialNow} preview />
-      <section className="hero">
-        <div className="hero__layout container">
-          <div className="hero__imageWrap">
-            <div className="hero__badge">{siteContent.hero.badge}</div>
-            <Image
-              className="hero__image"
-              src="/images/nick-home-image.png"
-              alt="Nicholas Hadley in the kitchen with fresh baked bread."
-              width={1290}
-              height={2796}
-              priority
-            />
+
+      <section className="kitchen-bakes container" id="our-bakes" aria-labelledby="bakes-heading">
+        <div className="kitchen-section-heading">
+          <h2 id="bakes-heading">Baked to be shared.</h2>
+          <p className="kitchen-eyebrow">Small batches. A little extra love.</p>
+        </div>
+        <div className="kitchen-bakes__grid">
+          {bakes.map((bake) => (
+            <Link className="bake" href="/order#ordering" key={bake.image}>
+              <div className="bake__image"><Image src={`/images/kitchen-table/${bake.image}.webp`} alt={bake.alt} width={bake.width} height={bake.height} sizes="(max-width: 600px) 92vw, 31vw" /></div>
+              <h3>{bake.title}</h3>
+              <p>{bake.caption}</p>
+            </Link>
+          ))}
+        </div>
+        <p className="kitchen-bakes__availability">Every bake has its day. <Link href="/order#ordering">See what&apos;s available to order.</Link></p>
+      </section>
+
+      <section className="kitchen-story" aria-labelledby="story-heading">
+        <div className="container kitchen-story__layout">
+          <div className="kitchen-story__copy">
+            <p className="kitchen-eyebrow">The heart of Hadley&apos;s Kitchen</p>
+            <h2 id="story-heading">A little kitchen.<br />A lot of heart.</h2>
+            <p>Generous bakes and community care in Eugene, Oregon. From our sourdough starter to the Free Little Pantry, there&apos;s a story behind every loaf.</p>
+            <Link className="kitchen-text-link" href="/about">Meet Nicholas</Link>
           </div>
-
-          <div className="hero__copy">
-            <p className="eyebrow">{siteContent.hero.eyebrow}</p>
-            <h1>{siteContent.hero.headline}</h1>
-            <p className="hero__description">{siteContent.hero.description}</p>
-
-            <div className="proof-strip" aria-label="Bakery highlights">
-              <span>Organic flour</span>
-              <span>Naturally leavened</span>
-              <span>Eugene, OR</span>
-            </div>
-
-            <div className="button-row">
-              <a className="button button--primary" href={siteContent.site.orderUrl}>
-                {siteContent.hero.primaryCta}
-              </a>
-              <Link className="button button--ghost" href="/about">
-                {siteContent.hero.secondaryCta}
-              </Link>
-            </div>
-
-            <div className="hero__mark">
-              <Image
-                src="/images/hk-logo.png"
-                alt="Hadley's Kitchen logo."
-                width={1200}
-                height={1200}
-              />
-            </div>
+          <div className="kitchen-story__photo">
+            <Image src="/images/kitchen-table/nicholas.webp" alt="Nicholas Hadley at home in the kitchen." width={750} height={1626} sizes="(max-width: 700px) 90vw, 32vw" />
           </div>
         </div>
       </section>
-
-      <section className="section section--cream">
-        <div className="container split-section">
-          <div>
-            <p className="eyebrow eyebrow--dark">Why people come back</p>
-            <h2 className="section-title section-title--dark">
-              Small-batch baking with a generous, community-first spirit.
-            </h2>
-          </div>
-
-          <p className="section-copy section-copy--dark">
-            Hadley&apos;s Kitchen brings together sourdough,
-            approachable hospitality, and a cottage bakery spirit that feels personal.
-            The goal is simple: make food that feels generous, grounded, and worth sharing.
-          </p>
-        </div>
-      </section>
-
-      <section className="section section--dark">
-        <div className="container">
-          <div className="section-heading">
-            <p className="eyebrow">Featured Offerings</p>
-            <h2 className="section-title">A small-batch cottage bakery built to feed the community.</h2>
-          </div>
-
-          <div className="card-grid">
-            {siteContent.offerings.map((offering) => (
-              <article className="info-card" key={offering.title}>
-                <h3>{offering.title}</h3>
-                <p>{offering.description}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-    </>
+    </div>
   );
 }

@@ -36,7 +36,7 @@ export function UpcomingEvents({ initialNow, preview = false }: {
       <div className="container events-panel">
         <div className="events-panel__content">
           <h2 id={preview ? "events-preview-heading" : "events-heading"} className="events-heading">
-            Upcoming Events
+            {preview ? "Come say hello" : "Upcoming Events"}
           </h2>
           {visibleEvents.length ? visibleEvents.map((event) => (
             <article className="event-details" key={`${event.startsAt}-${event.title}`}>
@@ -59,7 +59,7 @@ export function UpcomingEvents({ initialNow, preview = false }: {
         <div className="events-panel__actions">
           {preview ? (
             <Link className="button button--primary" href="/order#events">
-              View Events &amp; Ordering
+              Event details
             </Link>
           ) : null}
           {!visibleEvents.length ? (

@@ -3,6 +3,7 @@ import { Libre_Baskerville } from "next/font/google";
 import { SiteShell } from "@/components/site-shell";
 import { siteContent } from "@/content/site";
 import "./globals.css";
+import "./kitchen-table.css";
 
 const bodyFont = Libre_Baskerville({
   variable: "--font-body",
@@ -59,7 +60,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={bodyFont.variable}>
+    <html lang="en" className={bodyFont.variable} data-scroll-behavior="smooth">
       <body>
         <SiteShell>{children}</SiteShell>
       </body>
