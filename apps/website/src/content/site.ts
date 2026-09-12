@@ -8,10 +8,10 @@ export const siteContent = {
     updatesUrl: "https://app.simply-bread.co/hadleyskitchen/signup",
   },
   navItems: [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
-    { href: "/order", label: "Events & Ordering" },
+    { href: "/#our-bakes", label: "Our Bakes" },
+    { href: "/about", label: "Our Story" },
     { href: "/contact", label: "Contact" },
+    { href: "/order", label: "Events & Ordering" },
   ],
   hero: {
     eyebrow: "Cottage Bakery",

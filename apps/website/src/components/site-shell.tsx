@@ -14,19 +14,20 @@ export function SiteShell({ children }: SiteShellProps) {
 
   return (
     <div className="site-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="site-header">
         <div className="site-header__inner">
           <Link className="site-brand" href="/">
             <span className="site-brand__mark" aria-hidden="true">
               <Image src="/images/hk-logo.png" alt="" width={1200} height={1200} />
             </span>
-            <span>{siteContent.site.name}</span>
+            <span className="site-brand__name">{siteContent.site.name}</span>
           </Link>
 
           <nav className="site-nav" aria-label="Primary">
             {siteContent.navItems.map((item) => {
               const isActive =
-                item.href === "/" ? pathname === item.href : pathname.startsWith(item.href);
+                !item.href.includes("#") && pathname.startsWith(item.href);
               const isOrder = item.href === "/order";
 
               return (
@@ -40,6 +41,7 @@ export function SiteShell({ children }: SiteShellProps) {
                     .filter(Boolean)
                     .join(" ")}
                   href={item.href}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   {item.label}
                 </Link>
@@ -49,7 +51,7 @@ export function SiteShell({ children }: SiteShellProps) {
         </div>
       </header>
 
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>{children}</main>
 
       <footer className="site-footer">
         <div className="site-footer__inner">
