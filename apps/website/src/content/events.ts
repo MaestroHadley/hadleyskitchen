@@ -11,10 +11,10 @@ export const eventTimeZone = "America/Los_Angeles";
 // Use ISO timestamps with the Eugene UTC offset (-07:00 PDT or -08:00 PST).
 export const bakeryEvents: readonly BakeryEvent[] = [
   {
-    title: "The Collective Market",
-    startsAt: "2026-09-13T14:00:00-07:00",
-    endsAt: "2026-09-13T19:00:00-07:00",
-    location: "Eugene Farmer’s Market Pavilion",
+    title: "HK Pop-Up 9/26",
+    startsAt: "2026-09-26T10:00:00-07:00",
+    endsAt: "2026-09-26T14:00:00-07:00",
+    location: "527 N Garden Way, Eugene, 97401",
   },
 ];
 
