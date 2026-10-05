@@ -16,6 +16,26 @@ export const bakeryEvents: readonly BakeryEvent[] = [
     endsAt: "2026-09-26T14:00:00-07:00",
     location: "527 N Garden Way, Eugene, 97401",
   },
+  // Simply Bread storefront PDF captured October 4, 2026, pages 1–3.
+  // Retain the established pickup address; the storefront lists Eugene, OR 97401.
+  {
+    title: "Pick-Up ONLY 10/10",
+    startsAt: "2026-10-10T10:00:00-07:00",
+    endsAt: "2026-10-10T12:00:00-07:00",
+    location: "527 N Garden Way, Eugene, 97401",
+  },
+  {
+    title: "Full Pop-Up 10/17",
+    startsAt: "2026-10-17T10:00:00-07:00",
+    endsAt: "2026-10-17T14:00:00-07:00",
+    location: "527 N Garden Way, Eugene, 97401",
+  },
+  {
+    title: "Pick-Up ONLY 10/31",
+    startsAt: "2026-10-31T10:00:00-07:00",
+    endsAt: "2026-10-31T12:00:00-07:00",
+    location: "527 N Garden Way, Eugene, 97401",
+  },
 ];
 
 export function upcomingEvents(events: readonly BakeryEvent[], now: number) {
