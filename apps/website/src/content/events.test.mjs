@@ -58,7 +58,6 @@ test("October PDF events retain their confirmed dates and Pacific times without 
   assert.deepEqual(october.map(({ title, startsAt, endsAt }) => ({ title, startsAt, endsAt })), [
     { title: "Pick-Up ONLY 10/10", startsAt: "2026-10-10T10:00:00-07:00", endsAt: "2026-10-10T12:00:00-07:00" },
     { title: "Full Pop-Up 10/17", startsAt: "2026-10-17T10:00:00-07:00", endsAt: "2026-10-17T14:00:00-07:00" },
-    { title: "Pick-Up ONLY 10/31", startsAt: "2026-10-31T10:00:00-07:00", endsAt: "2026-10-31T12:00:00-07:00" },
   ]);
   assert.deepEqual(upcomingEvents(bakeryEvents, Date.parse("2026-10-05T12:00:00Z")), october);
   for (const [index, entry] of october.entries()) {

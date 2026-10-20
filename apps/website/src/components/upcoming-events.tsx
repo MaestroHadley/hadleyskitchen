@@ -54,7 +54,7 @@ export function UpcomingEvents({ initialNow, preview = false }: {
                 </a>
               ) : null}
             </article>
-          )) : <p className="events-empty">New dates coming soon</p>}
+          )) : <p className="events-empty">Something special is coming in November. Stay tuned for dates!</p>}
         </div>
         <div className="events-panel__actions">
           {preview ? (

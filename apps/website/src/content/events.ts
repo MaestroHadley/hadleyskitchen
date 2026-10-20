@@ -30,12 +30,6 @@ export const bakeryEvents: readonly BakeryEvent[] = [
     endsAt: "2026-10-17T14:00:00-07:00",
     location: "527 N Garden Way, Eugene, 97401",
   },
-  {
-    title: "Pick-Up ONLY 10/31",
-    startsAt: "2026-10-31T10:00:00-07:00",
-    endsAt: "2026-10-31T12:00:00-07:00",
-    location: "527 N Garden Way, Eugene, 97401",
-  },
 ];
 
 export function upcomingEvents(events: readonly BakeryEvent[], now: number) {
