@@ -48,6 +48,7 @@ export function UpcomingEvents({ initialNow, preview = false }: {
                 </span>
               </p>
               <p>{event.location}</p>
+              {event.description ? <p>{event.description}</p> : null}
               {!preview && event.preorderUrl ? (
                 <a className="button button--secondary" href={event.preorderUrl}>
                   Preorder for this event

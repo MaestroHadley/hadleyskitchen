@@ -3,6 +3,7 @@ export type BakeryEvent = {
   startsAt: string;
   endsAt: string;
   location: string;
+  description?: string;
   preorderUrl?: string;
 };
 
@@ -10,6 +11,13 @@ export const eventTimeZone = "America/Los_Angeles";
 
 // Use ISO timestamps with the Eugene UTC offset (-07:00 PDT or -08:00 PST).
 export const bakeryEvents: readonly BakeryEvent[] = [
+  {
+    title: "Anniversary Celebration",
+    description: "Join us for our anniversary celebration and a surprise announcement!",
+    startsAt: "2026-11-14T10:00:00-08:00",
+    endsAt: "2026-11-14T15:00:00-08:00",
+    location: "527 N Garden Way, Eugene, 97401",
+  },
   {
     title: "HK Pop-Up 9/26",
     startsAt: "2026-09-26T10:00:00-07:00",
