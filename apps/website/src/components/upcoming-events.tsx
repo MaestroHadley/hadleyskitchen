@@ -44,10 +44,12 @@ export function UpcomingEvents({ initialNow, preview = false }: {
               <p>
                 <time dateTime={event.startsAt}>{eventDate(event.startsAt)}</time>
                 <span className="event-details__time">
-                  {eventTime(event.startsAt)}–{eventTime(event.endsAt)} · Pacific time
+                  {event.kind === "deadline"
+                    ? `Order before ${eventTime(event.endsAt)}`
+                    : `${eventTime(event.startsAt)}–${eventTime(event.endsAt)}`} · Pacific time
                 </span>
               </p>
-              <p>{event.location}</p>
+              {event.location ? <p>{event.location}</p> : null}
               {event.description ? <p>{event.description}</p> : null}
               {!preview && event.preorderUrl ? (
                 <a className="button button--secondary" href={event.preorderUrl}>
