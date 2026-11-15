@@ -3,7 +3,7 @@ export type BakeryEvent = {
   startsAt: string;
   endsAt: string;
   location?: string;
-  kind?: "deadline";
+  preorderSchedule?: { opensOn: string; pickupOn: string };
   description?: string;
   preorderUrl?: string;
 };
@@ -13,11 +13,10 @@ export const eventTimeZone = "America/Los_Angeles";
 // Use ISO timestamps with the Eugene UTC offset (-07:00 PDT or -08:00 PST).
 export const bakeryEvents: readonly BakeryEvent[] = [
   {
-    title: "Thanksgiving Pre-Orders Close",
-    description: "Pre-orders open Sunday, November 22. Please order before 6:30 PM Pacific on Monday, November 23. Pickup is Wednesday, November 25.",
+    title: "Thanksgiving Preorders",
     startsAt: "2026-11-23T18:30:00-08:00",
     endsAt: "2026-11-23T18:30:00-08:00",
-    kind: "deadline",
+    preorderSchedule: { opensOn: "2026-11-22", pickupOn: "2026-11-25" },
   },
   {
     title: "Bread Pre-Orders Only",
@@ -78,6 +77,12 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   day: "numeric",
   year: "numeric",
 });
+const scheduleDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: eventTimeZone,
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+});
 const timeFormatter = new Intl.DateTimeFormat("en-US", {
   timeZone: eventTimeZone,
   hour: "numeric",
@@ -86,6 +91,11 @@ const timeFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function eventDate(value: string) {
   return dateFormatter.format(new Date(value));
+}
+
+export function scheduleDate(value: string) {
+  // A date-only entry is a Pacific calendar day, not a timed appointment.
+  return scheduleDateFormatter.format(new Date(value.length === 10 ? `${value}T12:00:00Z` : value));
 }
 
 export function eventTime(value: string) {
