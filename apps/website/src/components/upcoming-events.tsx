@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { bakeryEvents, eventDate, eventTime, upcomingEvents } from "@/content/events";
+import { bakeryEvents, eventDate, eventTime, scheduleDate, upcomingEvents } from "@/content/events";
 import { siteContent } from "@/content/site";
 
 export function UpcomingEvents({ initialNow, preview = false }: {
@@ -36,19 +36,25 @@ export function UpcomingEvents({ initialNow, preview = false }: {
       <div className="container events-panel">
         <div className="events-panel__content">
           <h2 id={preview ? "events-preview-heading" : "events-heading"} className="events-heading">
-            {preview ? "Come say hello" : "Upcoming Events"}
+            {preview ? (visibleEvents[0]?.preorderSchedule ? "Upcoming preorders" : "Come say hello") : "Upcoming Events"}
           </h2>
           {visibleEvents.length ? visibleEvents.map((event) => (
             <article className="event-details" key={`${event.startsAt}-${event.title}`}>
               <h3>{event.title}</h3>
-              <p>
-                <time dateTime={event.startsAt}>{eventDate(event.startsAt)}</time>
-                <span className="event-details__time">
-                  {event.kind === "deadline"
-                    ? `Order before ${eventTime(event.endsAt)}`
-                    : `${eventTime(event.startsAt)}–${eventTime(event.endsAt)}`} · Pacific time
-                </span>
-              </p>
+              {event.preorderSchedule ? (
+                <div>
+                  <p><strong>Opens:</strong>{" "}<time dateTime={event.preorderSchedule.opensOn}>{scheduleDate(event.preorderSchedule.opensOn)}</time></p>
+                  <p><strong>Order before:</strong>{" "}<time dateTime={event.endsAt}>{scheduleDate(event.endsAt)} at {eventTime(event.endsAt)} Pacific</time></p>
+                  <p><strong>Pickup:</strong>{" "}<time dateTime={event.preorderSchedule.pickupOn}>{scheduleDate(event.preorderSchedule.pickupOn)}</time></p>
+                </div>
+              ) : (
+                <p>
+                  <time dateTime={event.startsAt}>{eventDate(event.startsAt)}</time>{" "}
+                  <span className="event-details__time">
+                    {eventTime(event.startsAt)}–{eventTime(event.endsAt)} · Pacific time
+                  </span>
+                </p>
+              )}
               {event.location ? <p>{event.location}</p> : null}
               {event.description ? <p>{event.description}</p> : null}
               {!preview && event.preorderUrl ? (
