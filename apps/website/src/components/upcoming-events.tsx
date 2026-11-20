@@ -43,7 +43,7 @@ export function UpcomingEvents({ initialNow, preview = false }: {
               <h3>{event.title}</h3>
               {event.preorderSchedule ? (
                 <div>
-                  <p><strong>Opens:</strong>{" "}<time dateTime={event.preorderSchedule.opensOn}>{scheduleDate(event.preorderSchedule.opensOn)}</time></p>
+                  <p><strong>Opens:</strong>{" "}<time dateTime={event.preorderSchedule.opensOn}>{scheduleDate(event.preorderSchedule.opensOn)}{event.preorderSchedule.opensOn.length > 10 ? ` at ${eventTime(event.preorderSchedule.opensOn)} Pacific` : ""}</time></p>
                   <p><strong>Order before:</strong>{" "}<time dateTime={event.endsAt}>{scheduleDate(event.endsAt)} at {eventTime(event.endsAt)} Pacific</time></p>
                   <p><strong>Pickup:</strong>{" "}<time dateTime={event.preorderSchedule.pickupOn}>{scheduleDate(event.preorderSchedule.pickupOn)}</time></p>
                 </div>
