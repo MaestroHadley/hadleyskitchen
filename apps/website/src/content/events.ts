@@ -14,9 +14,9 @@ export const eventTimeZone = "America/Los_Angeles";
 export const bakeryEvents: readonly BakeryEvent[] = [
   {
     title: "Thanksgiving Preorders",
-    startsAt: "2026-11-23T18:30:00-08:00",
-    endsAt: "2026-11-23T18:30:00-08:00",
-    preorderSchedule: { opensOn: "2026-11-22", pickupOn: "2026-11-25" },
+    startsAt: "2026-11-22T20:00:00-08:00",
+    endsAt: "2026-11-22T20:00:00-08:00",
+    preorderSchedule: { opensOn: "2026-11-20T09:00:00-08:00", pickupOn: "2026-11-25" },
   },
   {
     title: "Bread Pre-Orders Only",
